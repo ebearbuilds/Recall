@@ -19,7 +19,7 @@
     --text: #f0f0f0;
     --text-muted: #888;
     --text-faint: #555;
-    --accent: #6861FF;
+    --accent: #c8f135;
     --accent-dim: rgba(200,241,53,0.12);
     --red: #ff5a36;
     --red-dim: rgba(255,90,54,0.12);
@@ -774,7 +774,7 @@
   .editor-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
 
   /* review */
-  .review-session { padding: 40px 36px; max-width: 1000; }
+  .review-session { padding: 40px 36px; max-width: 860px; }
   .review-progress-row { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
   .review-progress-strip { flex: 1; height: 3px; background: var(--border); border-radius: 1px; overflow: hidden; }
   .review-progress-fill { height: 100%; background: var(--accent); border-radius: 1px; transition: width 0.3s; }
@@ -1103,9 +1103,10 @@
         Example: <code>The capital of France is {{c1::Paris}} and it has {{c2::2 million}} people.</code>
       </div>
       <div class="rich-toolbar">
-        <button class="rich-btn" onclick="wrapText('card-cloze','**','**')"><b>B</b></button>
-        <button class="rich-btn" onclick="wrapText('card-cloze','_','_')"><em>I</em></button>
-        <button class="rich-btn" onclick="wrapText('card-cloze','`','`')">code</button>
+        <button class="rich-btn" onclick="wrapText('card-cloze','**','**')" title="Cmd/Ctrl+B"><b>B</b></button>
+        <button class="rich-btn" onclick="wrapText('card-cloze','_','_')" title="Cmd/Ctrl+I"><em>I</em></button>
+        <button class="rich-btn" onclick="wrapText('card-cloze','`','`')" title="Cmd/Ctrl+E">code</button>
+        <button class="rich-btn" onclick="insertBullet('card-cloze')" title="Select lines then click">• list</button>
         <button class="rich-btn" onclick="insertClozeTag()">+ cloze</button>
       </div>
       <textarea class="editor-textarea" id="card-cloze" placeholder="The capital of France is {{c1::Paris}}..." oninput="updateCardPreview()" onkeydown="editorKeydown(event,'card-cloze')" style="min-height:120px;"></textarea>
