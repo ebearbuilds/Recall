@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RECALL — Memory Trainer</title>
+<title>Recall</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e0e'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-weight='700' font-size='16' fill='%23c8f135' text-anchor='middle' letter-spacing='-1'%3ER%3C/text%3E%3Crect x='6' y='25' width='20' height='1.5' rx='0.75' fill='%23c8f135' opacity='0.4'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -678,6 +679,27 @@
   .select-item-name { font-size: 14px; font-weight: 500; }
   .select-item-words { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
   .arrow { color: var(--text-faint); font-size: 16px; }
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    align-items: center;
+  }
+  .card-action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .card-action-btn:hover { border-color: var(--border-strong); color: var(--text-muted); }
+  .card-action-btn.delete:hover { border-color: var(--red); color: var(--red); }
 </style>
 </head>
 <body>
@@ -838,17 +860,17 @@
   </div>
 </div>
 
-<!-- ADD TEXT MODAL -->
+<!-- ADD / EDIT TEXT MODAL -->
 <div class="modal-overlay" id="modal" onclick="handleModalClick(event)">
   <div class="modal">
-    <div class="modal-title">Add a text</div>
+    <div class="modal-title" id="modal-title">Add a text</div>
     <div class="field-label">Title</div>
     <input class="text-input" id="input-title" type="text" placeholder="e.g. Feynman on curiosity" />
-    <div class="field-label">Paste your passage</div>
+    <div class="field-label">Passage</div>
     <textarea class="textarea-input" id="input-passage" placeholder="Paste or type the text you want to memorise..."></textarea>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveText()">Save text</button>
+      <button class="btn-save" id="modal-save-btn" onclick="saveText()">Save text</button>
     </div>
   </div>
 </div>
@@ -989,7 +1011,11 @@ function textCard(t, isDueSection) {
     <div class="card-progress-track">
       <div class="card-progress-fill ${fillClass}" style="width:${lastAcc}%"></div>
     </div>
-    <button class="card-practice-btn">Practice →</button>
+    <div class="card-actions" onclick="event.stopPropagation()">
+      <button class="card-practice-btn" onclick="startPractice('${t.id}')">Practice →</button>
+      <button class="card-action-btn" onclick="openEditModal('${t.id}')">Edit</button>
+      <button class="card-action-btn delete" data-delete-id="${t.id}" onclick="event.stopPropagation(); deleteText('${t.id}')">Delete</button>
+    </div>
   </div>`;
 }
 
@@ -997,34 +1023,94 @@ function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
+let editingId = null;
+
 function openModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Add a text';
+  document.getElementById('modal-save-btn').textContent = 'Save text';
   document.getElementById('modal').classList.add('open');
   document.getElementById('input-title').focus();
 }
+
+function openEditModal(id) {
+  const t = state.texts.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit text';
+  document.getElementById('modal-save-btn').textContent = 'Save changes';
+  document.getElementById('input-title').value = t.title;
+  document.getElementById('input-passage').value = t.text;
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('input-title').focus();
+}
+
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
-  document.getElementById('input-title').value = '';
-  document.getElementById('input-passage').value = '';
+  const titleEl = document.getElementById('input-title');
+  const passageEl = document.getElementById('input-passage');
+  titleEl.value = '';
+  passageEl.value = '';
+  titleEl.style.borderColor = '';
+  passageEl.style.borderColor = '';
+  editingId = null;
 }
 function handleModalClick(e) { if (e.target === e.currentTarget) closeModal(); }
 
 function saveText() {
-  const title = document.getElementById('input-title').value.trim();
-  const text = document.getElementById('input-passage').value.trim();
-  if (!title || !text) { alert('Please enter both a title and passage.'); return; }
-  const entry = {
-    id: 'txt_' + Date.now(),
-    title, text,
-    added: Date.now(),
-    nextReview: Date.now(),
-    interval: 1,
-    accuracy: [],
-    sessions: 0
-  };
-  state.texts.push(entry);
+  const titleEl = document.getElementById('input-title');
+  const passageEl = document.getElementById('input-passage');
+  const title = titleEl.value.trim();
+  const text = passageEl.value.trim();
+
+  // inline validation — highlight empty fields
+  titleEl.style.borderColor = title ? '' : 'var(--red)';
+  passageEl.style.borderColor = text ? '' : 'var(--red)';
+  if (!title || !text) return;
+
+  if (editingId) {
+    const t = state.texts.find(x => x.id === editingId);
+    if (t) {
+      t.title = title;
+      t.text = text;
+    }
+  } else {
+    state.texts.push({
+      id: 'txt_' + Date.now(),
+      title, text,
+      added: Date.now(),
+      nextReview: Date.now(),
+      interval: 1,
+      accuracy: [],
+      sessions: 0
+    });
+  }
   saveState();
   closeModal();
   renderLibrary();
+}
+
+function deleteText(id) {
+  const t = state.texts.find(x => x.id === id);
+  if (!t) return;
+  // Find the delete button and swap to confirm UI inline
+  const btn = document.querySelector(`[data-delete-id="${id}"]`);
+  if (!btn) return;
+  btn.textContent = 'Confirm?';
+  btn.style.borderColor = 'var(--red)';
+  btn.style.color = 'var(--red)';
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    state.texts = state.texts.filter(x => x.id !== id);
+    saveState();
+    renderLibrary();
+  };
+  // Reset after 3s if not confirmed
+  setTimeout(() => {
+    if (document.querySelector(`[data-delete-id="${id}"]`)) {
+      renderLibrary();
+    }
+  }, 3000);
 }
 
 // ─── PRACTICE ─────────────────────────────────────────────────────────────────
