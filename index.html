@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recall</title>
+<title>RECALL — Memory Trainer</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e0e'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-weight='700' font-size='16' fill='%23c8f135' text-anchor='middle' letter-spacing='-1'%3ER%3C/text%3E%3Crect x='6' y='25' width='20' height='1.5' rx='0.75' fill='%23c8f135' opacity='0.4'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
@@ -349,6 +349,15 @@
   }
   .mode-pill:hover { border-color: var(--border-strong); color: var(--text); }
   .mode-pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .mode-group-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-faint);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 8px;
+  }
+  .mode-pill-icon { font-size: 11px; margin-right: 4px; opacity: 0.7; }
 
   /* session area */
   .session-box {
@@ -773,17 +782,40 @@
   <div id="practice-session" style="display:none; padding: 48px 32px; max-width: 720px;">
     <div class="practice-title" id="session-title">—</div>
     <div class="practice-source" id="session-source">—</div>
-    <div class="mode-row">
-      <button class="mode-pill active" onclick="setMode('chunk')" id="mode-chunk">Chunk build</button>
-      <button class="mode-pill" onclick="setMode('blank')" id="mode-blank">Blank recall</button>
-      <button class="mode-pill" onclick="setMode('reveal')" id="mode-reveal">Study</button>
+
+    <!-- Mode groups -->
+    <div style="margin-bottom: 28px;">
+      <div class="mode-group-label">Drilling</div>
+      <div class="mode-row">
+        <button class="mode-pill active" onclick="setMode('chunk')" id="mode-chunk">
+          <span class="mode-pill-icon">▤</span> Chunk build
+        </button>
+        <button class="mode-pill" onclick="setMode('cloze')" id="mode-cloze">
+          <span class="mode-pill-icon">▭</span> Cloze
+        </button>
+        <button class="mode-pill" onclick="setMode('firstletter')" id="mode-firstletter">
+          <span class="mode-pill-icon">A_</span> First letter
+        </button>
+        <button class="mode-pill" onclick="setMode('speed')" id="mode-speed">
+          <span class="mode-pill-icon">◷</span> Speed drill
+        </button>
+      </div>
+      <div class="mode-group-label" style="margin-top: 14px;">Testing & Review</div>
+      <div class="mode-row">
+        <button class="mode-pill" onclick="setMode('blank')" id="mode-blank">
+          <span class="mode-pill-icon">○</span> Blank recall
+        </button>
+        <button class="mode-pill" onclick="setMode('reveal')" id="mode-reveal">
+          <span class="mode-pill-icon">◉</span> Study
+        </button>
+      </div>
     </div>
 
-    <!-- CHUNK BUILD mode -->
+    <!-- CHUNK BUILD -->
     <div id="mode-chunk-ui">
       <div class="progress-strip"><div class="progress-strip-fill" id="chunk-progress" style="width:0%"></div></div>
       <div class="session-box">
-        <div class="session-label">Passage — type each word to reveal</div>
+        <div class="session-label">Type each word to reveal the passage</div>
         <div class="passage-display" id="chunk-display"></div>
       </div>
       <div class="input-row">
@@ -801,24 +833,91 @@
       </div>
     </div>
 
-    <!-- BLANK RECALL mode -->
+    <!-- CLOZE -->
+    <div id="mode-cloze-ui" style="display:none;">
+      <div class="progress-strip"><div class="progress-strip-fill" id="cloze-progress" style="width:0%"></div></div>
+      <div class="session-box">
+        <div class="session-label">Fill in the missing words</div>
+        <div class="passage-display" id="cloze-display"></div>
+      </div>
+      <div class="input-row">
+        <input class="recall-input" id="cloze-input" type="text" placeholder="type the missing word..." autocomplete="off" autocorrect="off" spellcheck="false" />
+        <button class="btn-check" id="cloze-check-btn" onclick="checkCloze()">Check</button>
+      </div>
+      <div class="feedback-row">
+        <span class="feedback-msg" id="cloze-feedback"></span>
+        <span class="session-score" id="cloze-score">0 / 0</span>
+      </div>
+      <button class="hint-btn" onclick="giveClozeHint()">hint</button>
+      <div class="completion-banner" id="cloze-complete">
+        <div class="completion-title">✓ Complete</div>
+        <div class="completion-sub" id="cloze-complete-sub"></div>
+      </div>
+    </div>
+
+    <!-- FIRST LETTER -->
+    <div id="mode-firstletter-ui" style="display:none;">
+      <div class="progress-strip"><div class="progress-strip-fill" id="fl-progress" style="width:0%"></div></div>
+      <div class="session-box">
+        <div class="session-label">Each word shown as its first letter — type the full word</div>
+        <div class="passage-display" id="fl-display"></div>
+      </div>
+      <div class="input-row">
+        <input class="recall-input" id="fl-input" type="text" placeholder="type the full word..." autocomplete="off" autocorrect="off" spellcheck="false" />
+        <button class="btn-check" id="fl-check-btn" onclick="checkFL()">Check</button>
+      </div>
+      <div class="feedback-row">
+        <span class="feedback-msg" id="fl-feedback"></span>
+        <span class="session-score" id="fl-score">0 / 0</span>
+      </div>
+      <div class="completion-banner" id="fl-complete">
+        <div class="completion-title">✓ Complete</div>
+        <div class="completion-sub" id="fl-complete-sub"></div>
+      </div>
+    </div>
+
+    <!-- SPEED DRILL -->
+    <div id="mode-speed-ui" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+        <div class="progress-strip" style="flex:1; margin-bottom:0; margin-right:16px;"><div class="progress-strip-fill" id="speed-progress" style="width:0%"></div></div>
+        <div id="speed-timer" style="font-family:'Space Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); min-width:60px; text-align:right;">0.0s</div>
+      </div>
+      <div class="session-box">
+        <div class="session-label">Type each word as fast as you can — mistakes add 3s</div>
+        <div class="passage-display" id="speed-display"></div>
+      </div>
+      <div class="input-row">
+        <input class="recall-input" id="speed-input" type="text" placeholder="type the next word..." autocomplete="off" autocorrect="off" spellcheck="false" />
+        <button class="btn-check" id="speed-check-btn" onclick="checkSpeed()">Go</button>
+      </div>
+      <div class="feedback-row">
+        <span class="feedback-msg" id="speed-feedback"></span>
+        <span class="session-score" id="speed-score">0 / 0</span>
+      </div>
+      <div class="completion-banner" id="speed-complete">
+        <div class="completion-title">✓ Complete</div>
+        <div class="completion-sub" id="speed-complete-sub"></div>
+      </div>
+    </div>
+
+    <!-- BLANK RECALL -->
     <div id="mode-blank-ui" style="display:none;">
       <div class="session-box">
-        <div class="session-label">Passage hidden — recall from memory</div>
-        <div style="color: var(--text-faint); font-size: 15px; font-style: italic;">The passage is hidden. Type everything you remember below.</div>
+        <div class="session-label">Passage hidden — type everything from memory</div>
+        <div style="color: var(--text-faint); font-size: 15px; font-style: italic;">The passage is fully hidden. Reproduce it as accurately as you can.</div>
       </div>
       <textarea class="blank-recall-area" id="blank-input" placeholder="type the full passage from memory..."></textarea>
       <div class="btn-row">
         <button class="btn-check" onclick="checkBlank()">Check my recall</button>
-        <button class="btn-secondary" onclick="revealForStudy()">Reveal passage</button>
+        <button class="btn-secondary" onclick="setMode('reveal')">Reveal passage</button>
       </div>
       <div class="diff-result" id="diff-result"></div>
     </div>
 
-    <!-- STUDY / REVEAL mode -->
+    <!-- STUDY -->
     <div id="mode-reveal-ui" style="display:none;">
       <div class="session-box">
-        <div class="session-label">Study mode — read carefully</div>
+        <div class="session-label">Study mode — read carefully before drilling</div>
         <div class="passage-display" id="reveal-text"></div>
       </div>
       <button class="btn-check" onclick="setMode('chunk')">Start drilling →</button>
@@ -1145,13 +1244,20 @@ function backToSelect() {
 }
 
 // ─── MODES ────────────────────────────────────────────────────────────────────
+const ALL_MODES = ['chunk','cloze','firstletter','speed','blank','reveal'];
+
 function setMode(m) {
   currentMode = m;
-  ['chunk','blank','reveal'].forEach(x => {
-    document.getElementById('mode-' + x).classList.toggle('active', x === m);
-    document.getElementById('mode-' + x + '-ui').style.display = x === m ? 'block' : 'none';
+  ALL_MODES.forEach(x => {
+    const btn = document.getElementById('mode-' + x);
+    const ui = document.getElementById('mode-' + x + '-ui');
+    if (btn) btn.classList.toggle('active', x === m);
+    if (ui) ui.style.display = x === m ? 'block' : 'none';
   });
   if (m === 'chunk') initChunk();
+  if (m === 'cloze') initCloze();
+  if (m === 'firstletter') initFL();
+  if (m === 'speed') initSpeed();
   if (m === 'blank') initBlank();
   if (m === 'reveal') initReveal();
 }
@@ -1244,9 +1350,278 @@ function giveHint() {
 }
 
 function resetSession() {
+  if (speedInterval) { clearInterval(speedInterval); speedInterval = null; }
   document.getElementById('chunk-input').disabled = false;
   document.getElementById('chunk-check-btn').disabled = false;
   setMode(currentMode);
+}
+
+// ─── CLOZE ────────────────────────────────────────────────────────────────────
+let clozeWords = [];
+let clozeBlanks = []; // indices of blanked words
+let clozeBlankIndex = 0; // which blank we're on
+let clozeCorrect = 0;
+let clozeAttempts = 0;
+
+function initCloze() {
+  const t = state.texts.find(x => x.id === activeTextId);
+  clozeWords = t.text.split(/\s+/);
+  // blank every 3rd word
+  clozeBlanks = clozeWords.map((w,i) => i).filter(i => (i+1) % 3 === 0);
+  if (clozeBlanks.length === 0) clozeBlanks = [Math.floor(clozeWords.length / 2)];
+  clozeBlankIndex = 0;
+  clozeCorrect = 0;
+  clozeAttempts = 0;
+  document.getElementById('cloze-input').value = '';
+  document.getElementById('cloze-input').disabled = false;
+  document.getElementById('cloze-check-btn').disabled = false;
+  document.getElementById('cloze-feedback').textContent = '';
+  document.getElementById('cloze-complete').classList.remove('show');
+  renderCloze();
+  document.getElementById('cloze-input').focus();
+  document.getElementById('cloze-input').onkeydown = e => { if (e.key === 'Enter') checkCloze(); };
+}
+
+function renderCloze() {
+  const pct = clozeBlanks.length > 0 ? Math.round(clozeBlankIndex / clozeBlanks.length * 100) : 0;
+  document.getElementById('cloze-progress').style.width = pct + '%';
+  document.getElementById('cloze-score').textContent = clozeBlankIndex + ' / ' + clozeBlanks.length;
+
+  const currentBlankWordIdx = clozeBlanks[clozeBlankIndex];
+  let html = '';
+  for (let i = 0; i < clozeWords.length; i++) {
+    const isFilledBlank = clozeBlanks.includes(i) && i < currentBlankWordIdx;
+    const isCurrentBlank = i === currentBlankWordIdx;
+    const isFutureBlank = clozeBlanks.includes(i) && i > currentBlankWordIdx;
+    if (isFilledBlank) {
+      html += '<span class="word word-correct">' + esc(clozeWords[i]) + '</span> ';
+    } else if (isCurrentBlank) {
+      html += '<span class="word word-current">[___]</span> ';
+    } else if (isFutureBlank) {
+      html += '<span style="display:inline-block;background:rgba(255,255,255,0.06);border-radius:2px;min-width:40px;height:18px;vertical-align:middle;margin:0 2px;"></span> ';
+    } else {
+      html += '<span class="word">' + esc(clozeWords[i]) + '</span> ';
+    }
+  }
+  document.getElementById('cloze-display').innerHTML = html;
+}
+
+function checkCloze() {
+  if (clozeBlankIndex >= clozeBlanks.length) return;
+  const input = document.getElementById('cloze-input');
+  const typed = input.value;
+  const target = clozeWords[clozeBlanks[clozeBlankIndex]];
+  clozeAttempts++;
+
+  if (normalize(typed) === normalize(target)) {
+    clozeBlankIndex++;
+    clozeCorrect++;
+    input.value = '';
+    input.classList.remove('error');
+    document.getElementById('cloze-feedback').textContent = '';
+
+    if (clozeBlankIndex >= clozeBlanks.length) {
+      renderCloze();
+      const acc = Math.round((clozeCorrect / clozeAttempts) * 100);
+      finishSession(acc);
+      document.getElementById('cloze-complete').classList.add('show');
+      document.getElementById('cloze-complete-sub').textContent = 'Accuracy: ' + acc + '% · ' + clozeBlanks.length + ' blanks filled';
+      input.disabled = true;
+      document.getElementById('cloze-check-btn').disabled = true;
+    } else {
+      renderCloze();
+      input.focus();
+    }
+  } else {
+    input.classList.add('error');
+    document.getElementById('cloze-feedback').textContent = '✗ try again';
+    document.getElementById('cloze-feedback').className = 'feedback-msg wrong';
+    input.select();
+  }
+}
+
+function giveClozeHint() {
+  if (clozeBlankIndex >= clozeBlanks.length) return;
+  const word = clozeWords[clozeBlanks[clozeBlankIndex]];
+  const hint = word.slice(0, Math.ceil(word.length / 2)) + '...';
+  document.getElementById('cloze-feedback').textContent = 'hint: ' + hint;
+  document.getElementById('cloze-feedback').className = 'feedback-msg';
+  document.getElementById('cloze-input').focus();
+}
+
+// ─── FIRST LETTER ─────────────────────────────────────────────────────────────
+let flWords = [];
+let flIndex = 0;
+let flCorrect = 0;
+let flAttempts = 0;
+
+function initFL() {
+  const t = state.texts.find(x => x.id === activeTextId);
+  flWords = t.text.split(/\s+/);
+  flIndex = 0;
+  flCorrect = 0;
+  flAttempts = 0;
+  document.getElementById('fl-input').value = '';
+  document.getElementById('fl-input').disabled = false;
+  document.getElementById('fl-check-btn').disabled = false;
+  document.getElementById('fl-feedback').textContent = '';
+  document.getElementById('fl-complete').classList.remove('show');
+  renderFL();
+  document.getElementById('fl-input').focus();
+  document.getElementById('fl-input').onkeydown = e => { if (e.key === 'Enter') checkFL(); };
+}
+
+function renderFL() {
+  const pct = flWords.length > 0 ? Math.round(flIndex / flWords.length * 100) : 0;
+  document.getElementById('fl-progress').style.width = pct + '%';
+  document.getElementById('fl-score').textContent = flIndex + ' / ' + flWords.length;
+
+  let html = '';
+  for (let i = 0; i < flWords.length; i++) {
+    const firstLetter = flWords[i][0] || '?';
+    if (i < flIndex) {
+      html += '<span class="word word-correct">' + esc(flWords[i]) + '</span> ';
+    } else if (i === flIndex) {
+      html += '<span class="word word-current" style="font-family:Space Mono,monospace;">' + esc(firstLetter) + '_</span> ';
+    } else {
+      html += '<span class="word" style="color:var(--text-muted); font-family:Space Mono,monospace;">' + esc(firstLetter) + '_</span> ';
+    }
+  }
+  document.getElementById('fl-display').innerHTML = html;
+}
+
+function checkFL() {
+  if (flIndex >= flWords.length) return;
+  const input = document.getElementById('fl-input');
+  const typed = input.value;
+  const target = flWords[flIndex];
+  flAttempts++;
+
+  if (normalize(typed) === normalize(target)) {
+    flIndex++;
+    flCorrect++;
+    input.value = '';
+    input.classList.remove('error');
+    document.getElementById('fl-feedback').textContent = '';
+    document.getElementById('fl-feedback').className = 'feedback-msg';
+
+    if (flIndex >= flWords.length) {
+      renderFL();
+      const acc = Math.round((flCorrect / flAttempts) * 100);
+      finishSession(acc);
+      document.getElementById('fl-complete').classList.add('show');
+      document.getElementById('fl-complete-sub').textContent = 'Accuracy: ' + acc + '% · ' + flWords.length + ' words recalled';
+      input.disabled = true;
+      document.getElementById('fl-check-btn').disabled = true;
+    } else {
+      renderFL();
+      input.focus();
+    }
+  } else {
+    input.classList.add('error');
+    document.getElementById('fl-feedback').textContent = '✗ try again';
+    document.getElementById('fl-feedback').className = 'feedback-msg wrong';
+    input.select();
+  }
+}
+
+// ─── SPEED DRILL ──────────────────────────────────────────────────────────────
+let speedWords = [];
+let speedIndex = 0;
+let speedCorrect = 0;
+let speedAttempts = 0;
+let speedElapsed = 0;
+let speedInterval = null;
+let speedStarted = false;
+
+function initSpeed() {
+  const t = state.texts.find(x => x.id === activeTextId);
+  speedWords = t.text.split(/\s+/);
+  speedIndex = 0;
+  speedCorrect = 0;
+  speedAttempts = 0;
+  speedElapsed = 0;
+  speedStarted = false;
+  if (speedInterval) clearInterval(speedInterval);
+  document.getElementById('speed-input').value = '';
+  document.getElementById('speed-input').disabled = false;
+  document.getElementById('speed-check-btn').disabled = false;
+  document.getElementById('speed-feedback').textContent = '';
+  document.getElementById('speed-complete').classList.remove('show');
+  document.getElementById('speed-timer').textContent = '0.0s';
+  document.getElementById('speed-timer').style.color = 'var(--accent)';
+  renderSpeed();
+  document.getElementById('speed-input').focus();
+  document.getElementById('speed-input').onkeydown = e => {
+    if (!speedStarted && e.key !== 'Tab') {
+      speedStarted = true;
+      speedInterval = setInterval(() => {
+        speedElapsed += 0.1;
+        document.getElementById('speed-timer').textContent = speedElapsed.toFixed(1) + 's';
+        if (speedElapsed > 60) document.getElementById('speed-timer').style.color = 'var(--red)';
+        else if (speedElapsed > 30) document.getElementById('speed-timer').style.color = '#EF9F27';
+      }, 100);
+    }
+    if (e.key === 'Enter') checkSpeed();
+  };
+}
+
+function renderSpeed() {
+  const pct = speedWords.length > 0 ? Math.round(speedIndex / speedWords.length * 100) : 0;
+  document.getElementById('speed-progress').style.width = pct + '%';
+  document.getElementById('speed-score').textContent = speedIndex + ' / ' + speedWords.length;
+
+  let html = '';
+  for (let i = 0; i < speedWords.length; i++) {
+    if (i < speedIndex) {
+      html += '<span class="word word-correct">' + esc(speedWords[i]) + '</span> ';
+    } else if (i === speedIndex) {
+      html += '<span class="word word-current">▮</span> ';
+    } else {
+      html += '<span class="word-hidden"></span> ';
+    }
+  }
+  document.getElementById('speed-display').innerHTML = html;
+}
+
+function checkSpeed() {
+  if (speedIndex >= speedWords.length) return;
+  const input = document.getElementById('speed-input');
+  const typed = input.value;
+  const target = speedWords[speedIndex];
+  speedAttempts++;
+
+  if (normalize(typed) === normalize(target)) {
+    speedIndex++;
+    speedCorrect++;
+    input.value = '';
+    input.classList.remove('error');
+    document.getElementById('speed-feedback').textContent = '';
+    document.getElementById('speed-feedback').className = 'feedback-msg';
+
+    if (speedIndex >= speedWords.length) {
+      if (speedInterval) clearInterval(speedInterval);
+      renderSpeed();
+      const acc = Math.round((speedCorrect / speedAttempts) * 100);
+      finishSession(acc);
+      document.getElementById('speed-complete').classList.add('show');
+      document.getElementById('speed-complete-sub').textContent =
+        'Time: ' + speedElapsed.toFixed(1) + 's · Accuracy: ' + acc + '%';
+      input.disabled = true;
+      document.getElementById('speed-check-btn').disabled = true;
+    } else {
+      renderSpeed();
+      input.focus();
+    }
+  } else {
+    // penalty: add 3 seconds
+    speedElapsed += 3;
+    document.getElementById('speed-timer').textContent = speedElapsed.toFixed(1) + 's';
+    input.classList.add('error');
+    document.getElementById('speed-feedback').textContent = '✗ +3s penalty';
+    document.getElementById('speed-feedback').className = 'feedback-msg wrong';
+    input.select();
+  }
 }
 
 // ─── BLANK RECALL ─────────────────────────────────────────────────────────────
@@ -1281,10 +1656,6 @@ function checkBlank() {
   diffEl.innerHTML = '<div style="margin-bottom:12px; font-family:Space Mono,monospace; font-size:12px; color:var(--text-muted);">accuracy: ' + acc + '% · ' + correct + '/' + targetWords.length + ' words correct</div>' + html;
   diffEl.style.display = 'block';
   finishSession(acc);
-}
-
-function revealForStudy() {
-  setMode('reveal');
 }
 
 // ─── STUDY MODE ───────────────────────────────────────────────────────────────
