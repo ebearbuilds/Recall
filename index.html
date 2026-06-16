@@ -1248,12 +1248,17 @@ let currentMode = 'chunk';
 function showPanel(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
+  const panel = document.getElementById('panel-' + name);
+  const navEl = document.getElementById('nav-' + name);
+  if (panel) panel.classList.add('active');
+  if (navEl) navEl.classList.add('active');
   currentPanel = name;
+  const addBtn = document.getElementById('nav-add-btn');
+  if (addBtn) addBtn.textContent = name === 'cards' ? '+ Add card' : '+ Add text';
   if (name === 'library') renderLibrary();
   if (name === 'practice') renderPracticeSelect();
   if (name === 'stats') renderStats();
+  if (name === 'cards') renderDecks();
 }
 
 // ─── LIBRARY ─────────────────────────────────────────────────────────────────
@@ -1970,29 +1975,6 @@ let reviewFlipped = false;
 let reviewMode = 'flip'; // 'flip' | 'type'
 let reviewResults = { again: 0, hard: 0, good: 0, easy: 0 };
 
-// ─── PANEL ROUTING UPDATE ─────────────────────────────────────────────────────
-const _origShowPanel = showPanel;
-// redefine showPanel to handle cards tab
-showPanel = function(name) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  ['library','practice','cards','stats'].forEach(n => {
-    const el = document.getElementById('nav-' + n);
-    if (el) el.classList.toggle('active', n === name);
-  });
-  document.getElementById('panel-' + name).classList.add('active');
-  currentPanel = name;
-  const addBtn = document.getElementById('nav-add-btn');
-  if (name === 'cards') {
-    addBtn.textContent = '+ Add card';
-    renderDecks();
-  } else {
-    addBtn.textContent = '+ Add text';
-    if (name === 'library') renderLibrary();
-    if (name === 'practice') renderPracticeSelect();
-    if (name === 'stats') renderStats();
-  }
-};
-
 // ─── MARKDOWN-LITE RENDERER ───────────────────────────────────────────────────
 function renderMd(text) {
   if (!text) return '';
@@ -2253,7 +2235,6 @@ function editorKeydown(e, fieldId) {
   if (mod && e.key === 'b') { e.preventDefault(); wrapText(fieldId, '**', '**'); }
   if (mod && e.key === 'i') { e.preventDefault(); wrapText(fieldId, '_', '_'); }
   if (mod && e.key === 'e') { e.preventDefault(); wrapText(fieldId, '`', '`'); }
-}
 }
 
 function insertClozeTag() {
