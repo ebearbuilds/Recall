@@ -738,6 +738,7 @@ function progressHTML(pct) {
   return `<div class="review-progress-row">
     <div class="review-strip-track"><div class="review-strip-fill" style="width:${pct}%"></div></div>
     <span class="review-counter">${revIdx + 1} / ${revQueue.length}</span>
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="skipCard()">Skip</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="endReview()">End</button>
   </div>`;
 }
@@ -775,9 +776,18 @@ function doFlip() {
   document.getElementById('rating-grid').classList.add('show');
 }
 
+function skipCard() {
+  if (revQueue.length <= 1) return;
+  const card = revQueue.splice(revIdx, 1)[0];
+  revQueue.push(card); // move to end
+  document.onkeydown = null;
+  renderRevCard();
+}
+
 function revKeyHandler(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if ((e.key === ' ' || e.key === 'Enter') && !revFlipped) { e.preventDefault(); doFlip(); }
+  if (e.key === 's' || e.key === 'S') { e.preventDefault(); skipCard(); }
   if (revFlipped) {
     if (e.key === '1') rateCard('again');
     if (e.key === '2') rateCard('hard');
