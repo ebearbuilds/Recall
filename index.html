@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recall</title>
+<title>RECALL</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e0e'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-weight='700' font-size='16' fill='%23c8f135' text-anchor='middle' letter-spacing='-1'%3ER%3C/text%3E%3Crect x='6' y='25' width='20' height='1.5' rx='0.75' fill='%23c8f135' opacity='0.4'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
@@ -138,6 +138,21 @@
   .cloze-hint code { font-family: 'Space Mono', monospace; color: var(--accent); }
   .cloze-blank-prev { background: rgba(200,241,53,0.15); color: var(--accent); border-bottom: 1px solid var(--accent); padding: 0 3px; }
 
+  /* code blocks */
+  .code-block { background: #111; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; margin: 10px 0; overflow: hidden; }
+  .code-lang { display: block; font-family: 'Space Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); padding: 6px 14px 4px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+  .code-block pre { margin: 0; padding: 14px 16px; overflow-x: auto; }
+  .code-block code { font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; color: #c9d1d9; background: none; padding: 0; }
+  /* python syntax colors */
+  .py-kw { color: #ff7b72; }
+  .py-str { color: #a5d6ff; }
+  .py-comment { color: #6e7681; font-style: italic; }
+  .py-fn { color: #d2a8ff; }
+  .py-class { color: #ffa657; }
+  .py-builtin { color: #79c0ff; }
+  .py-num { color: #f0883e; }
+  .py-dec { color: #ffa657; }
+
   /* REVIEW */
   .review-wrap { padding: 40px 40px; max-width: 900px; }
   .review-progress-row { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
@@ -243,6 +258,7 @@
         <button class="rich-btn" onclick="wrapText('ef','_','_')" title="Cmd+I"><em>I</em></button>
         <button class="rich-btn" onclick="wrapText('ef','`','`')" title="Cmd+E">code</button>
         <button class="rich-btn" onclick="insertBullet('ef')" title="Select lines">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlock('ef')" title="Insert code block">{ } block</button>
       </div>
       <textarea class="editor-ta" id="ef" placeholder="Question or prompt..." oninput="updatePreviews()" onkeydown="editorKey(event,'ef')"></textarea>
       <div class="preview-label">Preview</div>
@@ -254,6 +270,7 @@
         <button class="rich-btn" onclick="wrapText('eb','_','_')" title="Cmd+I"><em>I</em></button>
         <button class="rich-btn" onclick="wrapText('eb','`','`')" title="Cmd+E">code</button>
         <button class="rich-btn" onclick="insertBullet('eb')" title="Select lines">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlock('eb')" title="Insert code block">{ } block</button>
       </div>
       <textarea class="editor-ta" id="eb" placeholder="Answer..." oninput="updatePreviews()" onkeydown="editorKey(event,'eb')"></textarea>
       <div class="preview-label">Preview</div>
@@ -269,6 +286,7 @@
         <button class="rich-btn" onclick="wrapText('ec','_','_')" title="Cmd+I"><em>I</em></button>
         <button class="rich-btn" onclick="wrapText('ec','`','`')" title="Cmd+E">code</button>
         <button class="rich-btn" onclick="insertBullet('ec')" title="Select lines">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlock('ec')" title="Insert code block">{ } block</button>
         <button class="rich-btn" onclick="insertClozeTag()">+ cloze</button>
       </div>
       <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." oninput="updatePreviews()" onkeydown="editorKey(event,'ec')" style="min-height:120px;"></textarea>
@@ -331,7 +349,7 @@ if (state.decks.length === 0) {
   state.decks.push({ id: did, name: 'Data Structures', folderId: fid });
   state.cards.push(
     { id: 'c1', deckId: did, type: 'basic', front: 'What is **Big O notation**?', back: 'A way to describe algorithm _efficiency_ — how runtime or space grows as input size increases.\n- O(1): constant\n- O(n): linear\n- O(n²): quadratic', interval: 1, due: Date.now() - 86400000, ease: 2.5, reps: 2 },
-    { id: 'c2', deckId: did, type: 'basic', front: 'What does `git rebase` do?', back: 'Moves or combines commits onto a new base commit. Rewrites history — cleaner than merge for feature branches.', interval: 3, due: Date.now() + 86400000, ease: 2.5, reps: 4 },
+    { id: 'c2', deckId: did, type: 'basic', front: 'How do you implement a binary search in Python?', back: '```python\ndef binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n```', interval: 3, due: Date.now() + 86400000, ease: 2.5, reps: 4 },
     { id: 'c3', deckId: did, type: 'cloze', clozeText: 'A {{c1::hash table}} uses a {{c2::hash function}} to map keys to indices, giving O({{c3::1}}) average lookup.', interval: 1, due: Date.now() - 86400000, ease: 2.5, reps: 1 }
   );
   save();
@@ -356,6 +374,62 @@ function applyInline(html) {
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
   return html;
 }
+
+function highlightPython(code) {
+  const keywords = /\b(def|class|return|if|elif|else|for|while|in|not|and|or|is|None|True|False|import|from|as|with|try|except|finally|raise|pass|break|continue|lambda|yield|global|nonlocal|del|assert|async|await)\b/g;
+  const builtins = /\b(print|len|range|type|int|str|float|list|dict|set|tuple|bool|input|open|enumerate|zip|map|filter|sorted|reversed|sum|min|max|abs|round|isinstance|hasattr|getattr|setattr|super|staticmethod|classmethod|property)\b/g;
+  const decorators = /(^|\n)(@\w+)/g;
+  const strings1 = /("""[\s\S]*?""")/g;
+  const strings2 = /('''[\s\S]*?''')/g;
+  const strings3 = /("(?:[^"\\]|\\.)*")/g;
+  const strings4 = /('(?:[^'\\]|\\.)*')/g;
+  const comments = /(#[^\n]*)/g;
+  const numbers = /\b(\d+\.?\d*)\b/g;
+  const funcdef = /\bdef (\w+)/g;
+  const classdef = /\bclass (\w+)/g;
+
+  // process in order — use placeholders to avoid double-processing
+  let c = code;
+  const holders = [];
+  function hold(html) { holders.push(html); return `\x00${holders.length - 1}\x00`; }
+
+  // multi-line strings first
+  c = c.replace(strings1, m => hold(`<span class="py-str">${m}</span>`));
+  c = c.replace(strings2, m => hold(`<span class="py-str">${m}</span>`));
+  // comments
+  c = c.replace(comments, m => hold(`<span class="py-comment">${m}</span>`));
+  // single-line strings
+  c = c.replace(strings3, m => hold(`<span class="py-str">${m}</span>`));
+  c = c.replace(strings4, m => hold(`<span class="py-str">${m}</span>`));
+  // function/class names
+  c = c.replace(funcdef, (_, name) => `def <span class="py-fn">${name}</span>`);
+  c = c.replace(classdef, (_, name) => `class <span class="py-class">${name}</span>`);
+  // decorators
+  c = c.replace(decorators, (_, pre, dec) => pre + hold(`<span class="py-dec">${dec}</span>`));
+  // keywords
+  c = c.replace(keywords, m => hold(`<span class="py-kw">${m}</span>`));
+  // builtins
+  c = c.replace(builtins, m => hold(`<span class="py-builtin">${m}</span>`));
+  // numbers
+  c = c.replace(numbers, m => hold(`<span class="py-num">${m}</span>`));
+  // restore placeholders
+  c = c.replace(/\x00(\d+)\x00/g, (_, i) => holders[+i]);
+  return c;
+}
+
+function renderCodeBlock(raw, lang) {
+  const escaped = esc(raw.trim());
+  const highlighted = (lang === 'python' || lang === 'py' || lang === '') ? highlightPython(escaped) : escaped;
+  const label = lang ? `<span class="code-lang">${esc(lang)}</span>` : '';
+  return `<div class="code-block">${label}<pre><code>${highlighted}</code></pre></div>`;
+}
+
+function applyInline(html) {
+  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  return html;
+}
 function applyStructure(html) {
   const lines = html.split('\n');
   const out = []; let inList = false;
@@ -373,9 +447,20 @@ function applyStructure(html) {
 }
 function md(text) {
   if (!text) return '';
-  let h = esc(text);
+  // extract fenced code blocks first (```lang ... ```)
+  const blocks = [];
+  const withPlaceholders = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    blocks.push(renderCodeBlock(code, lang.toLowerCase()));
+    return `\x01CODE${blocks.length - 1}\x01`;
+  });
+  let h = esc(withPlaceholders);
   h = applyInline(h);
   h = applyStructure(h);
+  // restore code blocks (unescape the placeholder)
+  h = h.replace(/\x01CODE(\d+)\x01/g, (_, i) => blocks[+i]);
+  h = h.replace(/&amp;#x1;CODE(\d+)&amp;#x1;/g, (_, i) => blocks[+i]);
+  // handle esc'd placeholders
+  h = h.replace(/\u0001CODE(\d+)\u0001/g, (_, i) => blocks[+i]);
   return h;
 }
 function mdClozeBlanked(text) {
@@ -709,6 +794,22 @@ function insertClozeTag() {
   el.value = el.value.slice(0, s) + tag + el.value.slice(e);
   el.focus(); updatePreviews();
 }
+function insertCodeBlock(id) {
+  const el = document.getElementById(id);
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e);
+  const code = sel.length > 0 ? sel : 'your code here';
+  const block = `\`\`\`python\n${code}\n\`\`\``;
+  const pre = s === 0 || el.value[s-1] === '\n' ? '' : '\n';
+  el.value = el.value.slice(0, s) + pre + block + el.value.slice(e);
+  el.focus();
+  // position cursor inside the block
+  const insertPos = s + pre.length + 10; // after ```python\n
+  el.selectionStart = insertPos;
+  el.selectionEnd = insertPos + code.length;
+  updatePreviews();
+}
+
 function editorKey(e, id) {
   const mod = navigator.platform.toUpperCase().includes('MAC') ? e.metaKey : e.ctrlKey;
   if (mod && e.key === 'b') { e.preventDefault(); wrapText(id, '**', '**'); }
