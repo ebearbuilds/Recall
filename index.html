@@ -375,61 +375,73 @@ function applyInline(html) {
   return html;
 }
 
-function highlightPython(code) {
-  const keywords = /\b(def|class|return|if|elif|else|for|while|in|not|and|or|is|None|True|False|import|from|as|with|try|except|finally|raise|pass|break|continue|lambda|yield|global|nonlocal|del|assert|async|await)\b/g;
-  const builtins = /\b(print|len|range|type|int|str|float|list|dict|set|tuple|bool|input|open|enumerate|zip|map|filter|sorted|reversed|sum|min|max|abs|round|isinstance|hasattr|getattr|setattr|super|staticmethod|classmethod|property)\b/g;
-  const decorators = /(^|\n)(@\w+)/g;
-  const strings1 = /("""[\s\S]*?""")/g;
-  const strings2 = /('''[\s\S]*?''')/g;
-  const strings3 = /("(?:[^"\\]|\\.)*")/g;
-  const strings4 = /('(?:[^'\\]|\\.)*')/g;
-  const comments = /(#[^\n]*)/g;
-  const numbers = /\b(\d+\.?\d*)\b/g;
-  const funcdef = /\bdef (\w+)/g;
-  const classdef = /\bclass (\w+)/g;
+function highlightPython(raw) {
+  const KEYWORDS = new Set(['def','class','return','if','elif','else','for','while','in','not','and','or','is','None','True','False','import','from','as','with','try','except','finally','raise','pass','break','continue','lambda','yield','global','nonlocal','del','assert','async','await']);
+  const BUILTINS = new Set(['print','len','range','type','int','str','float','list','dict','set','tuple','bool','input','open','enumerate','zip','map','filter','sorted','reversed','sum','min','max','abs','round','isinstance','hasattr','getattr','setattr','super','staticmethod','classmethod','property']);
 
-  // process in order — use placeholders to avoid double-processing
-  let c = code;
-  const holders = [];
-  function hold(html) { holders.push(html); return `\x00${holders.length - 1}\x00`; }
+  // single-pass: consume tokens left to right, never re-process
+  const tokenRe = new RegExp(
+    '("""[\\s\\S]*?""")' +          // triple double string
+    "|('''[\\s\\S]*?''')" +          // triple single string
+    '|(#[^\\n]*)' +                  // comment
+    '|("(?:[^"\\\\]|\\\\.)*")' +     // double string
+    "|('(?:[^'\\\\]|\\\\.)*')" +     // single string
+    '|(@\\w+)' +                     // decorator
+    '|([0-9]+\\.?[0-9]*)(?![\\w])' + // number (not followed by word char)
+    '|([A-Za-z_]\\w*)' +             // identifier / keyword
+    '|([^\\w\'\"#@]+|.)',             // everything else (operators, spaces, etc)
+    'g'
+  );
 
-  // multi-line strings first
-  c = c.replace(strings1, m => hold(`<span class="py-str">${m}</span>`));
-  c = c.replace(strings2, m => hold(`<span class="py-str">${m}</span>`));
-  // comments
-  c = c.replace(comments, m => hold(`<span class="py-comment">${m}</span>`));
-  // single-line strings
-  c = c.replace(strings3, m => hold(`<span class="py-str">${m}</span>`));
-  c = c.replace(strings4, m => hold(`<span class="py-str">${m}</span>`));
-  // function/class names
-  c = c.replace(funcdef, (_, name) => `def <span class="py-fn">${name}</span>`);
-  c = c.replace(classdef, (_, name) => `class <span class="py-class">${name}</span>`);
-  // decorators
-  c = c.replace(decorators, (_, pre, dec) => pre + hold(`<span class="py-dec">${dec}</span>`));
-  // keywords
-  c = c.replace(keywords, m => hold(`<span class="py-kw">${m}</span>`));
-  // builtins
-  c = c.replace(builtins, m => hold(`<span class="py-builtin">${m}</span>`));
-  // numbers
-  c = c.replace(numbers, m => hold(`<span class="py-num">${m}</span>`));
-  // restore placeholders
-  c = c.replace(/\x00(\d+)\x00/g, (_, i) => holders[+i]);
-  return c;
+  let out = '';
+  let m;
+  while ((m = tokenRe.exec(raw)) !== null) {
+    const [full, triDbl, triSng, comment, dblStr, sngStr, dec, num, ident, other] = m;
+    if (triDbl || triSng)        out += `<span class="py-str">${esc(full)}</span>`;
+    else if (comment)            out += `<span class="py-comment">${esc(full)}</span>`;
+    else if (dblStr || sngStr)   out += `<span class="py-str">${esc(full)}</span>`;
+    else if (dec)                out += `<span class="py-dec">${esc(full)}</span>`;
+    else if (num)                out += `<span class="py-num">${esc(full)}</span>`;
+    else if (ident) {
+      if (KEYWORDS.has(ident))   out += `<span class="py-kw">${esc(ident)}</span>`;
+      else if (BUILTINS.has(ident)) out += `<span class="py-builtin">${esc(ident)}</span>`;
+      else                       out += esc(ident);
+    }
+    else                         out += esc(full);
+  }
+  // post-process: color function names (word before `(`) and class names (word after `class `)
+  out = out.replace(/(<span class="py-kw">def<\/span>\s+)([A-Za-z_]\w*)/g,
+    (_, kw, name) => kw + `<span class="py-fn">${name}</span>`);
+  out = out.replace(/(<span class="py-kw">class<\/span>\s+)([A-Za-z_]\w*)/g,
+    (_, kw, name) => kw + `<span class="py-class">${name}</span>`);
+  return out;
 }
 
 function renderCodeBlock(raw, lang) {
-  const escaped = esc(raw.trim());
-  const highlighted = (lang === 'python' || lang === 'py' || lang === '') ? highlightPython(escaped) : escaped;
+  // highlight on raw (unescaped) text
+  const isPython = (lang === 'python' || lang === 'py' || !lang);
+  const highlighted = isPython ? highlightPython(raw.trim()) : esc(raw.trim());
   const label = lang ? `<span class="code-lang">${esc(lang)}</span>` : '';
   return `<div class="code-block">${label}<pre><code>${highlighted}</code></pre></div>`;
 }
 
-function applyInline(html) {
-  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  return html;
+function md(text) {
+  if (!text) return '';
+  // extract fenced code blocks BEFORE any escaping
+  const blocks = [];
+  const stripped = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    blocks.push(renderCodeBlock(code, lang.toLowerCase().trim()));
+    return `\x01BLOCK${blocks.length - 1}\x01`;
+  });
+  // now escape and apply inline markdown
+  let h = esc(stripped);
+  h = applyInline(h);
+  h = applyStructure(h);
+  // restore code blocks
+  h = h.replace(/\x01BLOCK(\d+)\x01/g, (_, i) => blocks[+i]);
+  return h;
 }
+
 function applyStructure(html) {
   const lines = html.split('\n');
   const out = []; let inList = false;
@@ -445,30 +457,18 @@ function applyStructure(html) {
   if (inList) out.push('</ul>');
   return out.join('\n').replace(/\n(?!<)/g,'<br>').replace(/<br>\n/g,'<br>');
 }
-function md(text) {
-  if (!text) return '';
-  // extract fenced code blocks first (```lang ... ```)
-  const blocks = [];
-  const withPlaceholders = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    blocks.push(renderCodeBlock(code, lang.toLowerCase()));
-    return `\x01CODE${blocks.length - 1}\x01`;
-  });
-  let h = esc(withPlaceholders);
-  h = applyInline(h);
-  h = applyStructure(h);
-  // restore code blocks (unescape the placeholder)
-  h = h.replace(/\x01CODE(\d+)\x01/g, (_, i) => blocks[+i]);
-  h = h.replace(/&amp;#x1;CODE(\d+)&amp;#x1;/g, (_, i) => blocks[+i]);
-  // handle esc'd placeholders
-  h = h.replace(/\u0001CODE(\d+)\u0001/g, (_, i) => blocks[+i]);
-  return h;
-}
 function mdClozeBlanked(text) {
   if (!text) return '';
-  let h = esc(text);
+  const blocks = [];
+  const stripped = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    blocks.push(renderCodeBlock(code, lang.toLowerCase().trim()));
+    return `\x01BLOCK${blocks.length - 1}\x01`;
+  });
+  let h = esc(stripped);
   h = applyInline(h);
   h = h.replace(/\{\{c\d+::(.+?)\}\}/g, '<span class="cloze-blank-prev">[...]</span>');
   h = applyStructure(h);
+  h = h.replace(/\x01BLOCK(\d+)\x01/g, (_, i) => blocks[+i]);
   return h;
 }
 function getClozeAnswers(text) {
