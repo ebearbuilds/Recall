@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RECALL</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e0e'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-weight='700' font-size='16' fill='%23c8f135' text-anchor='middle' letter-spacing='-1'%3ER%3C/text%3E%3Crect x='6' y='25' width='20' height='1.5' rx='0.75' fill='%23c8f135' opacity='0.4'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='12' cy='20' r='7' fill='%23F24E1E'/%3E%3Ccircle cx='20' cy='20' r='7' fill='%23FF7262'/%3E%3Ccircle cx='8' cy='13' r='7' fill='%23A259FF'/%3E%3Ccircle cx='16' cy='11' r='7' fill='%231ABCFE'/%3E%3Ccircle cx='24' cy='13' r='7' fill='%230ACF83'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -19,12 +19,20 @@
     --text: #f0f0f0;
     --text-muted: #888;
     --text-faint: #555;
-    --accent: #c8f135;
-    --accent-dim: rgba(200,241,53,0.12);
-    --red: #ff5a36;
-    --red-dim: rgba(255,90,54,0.12);
-    --blue: #4d9de0;
-    --blue-dim: rgba(77,157,224,0.12);
+    /* Figma palette */
+    --green: #0ACF83;
+    --green-dim: rgba(10,207,131,0.12);
+    --blue: #1ABCFE;
+    --blue-dim: rgba(27,188,254,0.12);
+    --purple: #A259FF;
+    --purple-dim: rgba(162,89,255,0.12);
+    --coral: #FF7262;
+    --coral-dim: rgba(255,114,98,0.12);
+    --red: #F24E1E;
+    --red-dim: rgba(242,78,30,0.12);
+    /* roles */
+    --accent: var(--green);
+    --accent-dim: var(--green-dim);
   }
 
   body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; font-size: 15px; line-height: 1.6; }
@@ -61,7 +69,7 @@
   .deck-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 20px 8px 32px; cursor: pointer; transition: background 0.12s; border-left: 2px solid transparent; }
   .deck-item.ungrouped { padding-left: 20px; }
   .deck-item:hover { background: var(--bg-hover); }
-  .deck-item.active { background: var(--bg-hover); border-left-color: var(--accent); }
+  .deck-item.active { background: var(--bg-hover); border-left-color: var(--purple); }
   .deck-item-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
   .deck-item-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
   .deck-item-count { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; }
@@ -81,7 +89,7 @@
   .card-row:hover { background: var(--bg-hover); }
   .card-type-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; font-family: 'Space Mono', monospace; padding: 3px 7px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
   .type-basic { background: var(--blue-dim); color: var(--blue); }
-  .type-cloze { background: rgba(200,241,53,0.1); color: var(--accent); }
+  .type-cloze { background: var(--purple-dim); color: var(--purple); }
   .card-row-front { font-size: 14px; flex: 1; line-height: 1.4; }
   .card-row-front b { font-weight: 600; }
   .card-row-front em { font-style: italic; color: var(--text-muted); }
@@ -135,9 +143,9 @@
   .preview-box code { font-family: 'Space Mono', monospace; font-size: 12px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 2px; }
   .preview-box ul { padding-left: 18px; margin: 4px 0; }
   .preview-box li { margin: 2px 0; }
-  .cloze-hint { background: rgba(200,241,53,0.06); border: 1px solid rgba(200,241,53,0.2); border-radius: 2px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.7; }
-  .cloze-hint code { font-family: 'Space Mono', monospace; color: var(--accent); }
-  .cloze-blank-prev { background: rgba(200,241,53,0.15); color: var(--accent); border-bottom: 1px solid var(--accent); padding: 0 3px; }
+  .cloze-hint { background: var(--purple-dim); border: 1px solid rgba(162,89,255,0.2); border-radius: 2px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.7; }
+  .cloze-hint code { font-family: 'Space Mono', monospace; color: var(--purple); }
+  .cloze-blank-prev { background: var(--purple-dim); color: var(--purple); border-bottom: 1px solid var(--purple); padding: 0 3px; }
 
   /* code blocks */
   .code-block { border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; margin: 10px 0; overflow: hidden; background: #111; }
@@ -168,7 +176,7 @@
   .review-counter { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 
   .flip-front, .flip-back { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 28px 32px; background: var(--bg-card); margin-bottom: 14px; }
-  .flip-back { background: rgba(200,241,53,0.03); border-color: rgba(200,241,53,0.2); display: none; }
+  .flip-back { background: rgba(10,207,131,0.03); border-color: rgba(10,207,131,0.2); display: none; }
   .flip-back.show { display: block; }
   .flip-face-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-bottom: 12px; }
   .flip-content { font-size: 17px; line-height: 1.75; }
@@ -190,8 +198,8 @@
   .rl { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
   .ri { display: block; font-size: 10px; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-top: 2px; }
   .r-again { color: var(--red); }
-  .r-hard { color: #EF9F27; }
-  .r-good { color: var(--accent); }
+  .r-hard { color: var(--coral); }
+  .r-good { color: var(--green); }
   .r-easy { color: var(--blue); }
 
   .session-box { border: 1px solid var(--border); border-radius: 2px; padding: 24px 28px; margin-bottom: 18px; }
@@ -222,7 +230,16 @@
 <body>
 
 <nav>
-  <div class="nav-logo">Recall</div>
+  <div class="nav-logo" style="display:flex;align-items:center;gap:10px;">
+    <svg width="24" height="20" viewBox="0 0 32 26" style="flex-shrink:0;">
+      <circle cx="12" cy="20" r="7" fill="#F24E1E"/>
+      <circle cx="20" cy="20" r="7" fill="#FF7262"/>
+      <circle cx="8"  cy="13" r="7" fill="#A259FF"/>
+      <circle cx="16" cy="11" r="7" fill="#1ABCFE"/>
+      <circle cx="24" cy="13" r="7" fill="#0ACF83"/>
+    </svg>
+    Recall
+  </div>
   <div class="nav-right">
     <div class="due-pill" id="due-pill">0 due</div>
     <button class="btn-add" onclick="openCardEditor()">+ Add card</button>
@@ -574,7 +591,7 @@ function renderDeckMain() {
     <div class="main">
       <div class="deck-header">
         <div>
-          ${folder ? `<div style="font-size:11px;color:var(--text-faint);font-family:Space Mono,monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">${esc(folder.name)}</div>` : ''}
+          ${folder ? `<div style="font-size:11px;color:var(--purple);font-family:Space Mono,monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">${esc(folder.name)}</div>` : ''}
           <div class="deck-title">${esc(deck.name)}</div>
           <div class="deck-meta">${cards.length} card${cards.length !== 1 ? 's' : ''} · ${due} due</div>
         </div>
@@ -1065,7 +1082,7 @@ function renderRevComplete(main) {
     <div class="rc-stats">
       <div><div class="rc-stat-num" style="color:var(--accent)">${acc}%</div><div class="rc-stat-lbl">Recall rate</div></div>
       <div><div class="rc-stat-num" style="color:var(--red)">${revResults.again}</div><div class="rc-stat-lbl">Again</div></div>
-      <div><div class="rc-stat-num" style="color:#EF9F27">${revResults.hard}</div><div class="rc-stat-lbl">Hard</div></div>
+      <div><div class="rc-stat-num" style="color:var(--coral)">${revResults.hard}</div><div class="rc-stat-lbl">Hard</div></div>
       <div><div class="rc-stat-num" style="color:var(--accent)">${revResults.good + revResults.easy}</div><div class="rc-stat-lbl">Good/Easy</div></div>
     </div>
     <button class="btn-add" onclick="renderDeckMain()">Back to deck</button>
