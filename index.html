@@ -727,7 +727,15 @@ function openCardEditor(cardId) {
   document.getElementById('card-overlay').classList.add('open');
   setTimeout(() => document.getElementById(cardType === 'cloze' ? 'ec' : 'ef').focus(), 50);
 }
-function closeCardEditor() { document.getElementById('card-overlay').classList.remove('open'); editingCardId = null; }
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  // if cancelled mid-review (not saved), resume the session
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
 
 function setCardType(t) {
   cardType = t;
@@ -778,9 +786,17 @@ function saveCard() {
     }
   }
   save();
+  const wasInReview = resumeReviewAfterEdit;
+  resumeReviewAfterEdit = false;
   closeCardEditor();
-  renderDeckMain();
-  renderSidebar();
+  if (wasInReview) {
+    const updatedCard = state.cards.find(c => c.id === revQueue[revIdx]?.id);
+    if (updatedCard) revQueue[revIdx] = updatedCard;
+    renderRevCard();
+  } else {
+    renderDeckMain();
+    renderSidebar();
+  }
 }
 
 function resetCard(id) {
@@ -884,9 +900,11 @@ function renderRevCard() {
 }
 
 function progressHTML(pct) {
+  const card = revQueue[revIdx];
   return `<div class="review-progress-row">
     <div class="review-strip-track"><div class="review-strip-fill" style="width:${pct}%"></div></div>
     <span class="review-counter">${revIdx + 1} / ${revQueue.length}</span>
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="editCurrentCard()">Edit</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="skipCard()">Skip</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="endReview()">End</button>
   </div>`;
@@ -923,6 +941,16 @@ function doFlip() {
   document.getElementById('flip-btn').style.display = 'none';
   document.getElementById('type-row').style.display = 'none';
   document.getElementById('rating-grid').classList.add('show');
+}
+
+let resumeReviewAfterEdit = false;
+
+function editCurrentCard() {
+  const card = revQueue[revIdx];
+  if (!card) return;
+  resumeReviewAfterEdit = true;
+  document.onkeydown = null;
+  openCardEditor(card.id);
 }
 
 function skipCard() {
