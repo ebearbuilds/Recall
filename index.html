@@ -185,6 +185,15 @@
   .flip-content code { font-family: 'Space Mono', monospace; font-size: 13px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 2px; }
   .flip-content ul { padding-left: 20px; margin: 6px 0; }
   .flip-content li { margin: 4px 0; }
+  /* font size overrides */
+  .fs-sm .flip-content, .fs-sm .cloze-display { font-size: 13px; line-height: 1.65; }
+  .fs-md .flip-content, .fs-md .cloze-display { font-size: 17px; line-height: 1.75; }
+  .fs-lg .flip-content, .fs-lg .cloze-display { font-size: 22px; line-height: 1.7; }
+  /* font size toggle buttons */
+  .fs-toggle { display: flex; gap: 2px; flex-shrink: 0; }
+  .fs-btn { background: none; border: 1px solid var(--border); color: var(--text-faint); font-family: 'Space Mono', monospace; padding: 4px 8px; cursor: pointer; border-radius: 2px; transition: all 0.12s; line-height: 1; }
+  .fs-btn:hover { border-color: var(--border-strong); color: var(--text-muted); }
+  .fs-btn.active { border-color: var(--accent); color: var(--accent); }
 
   .flip-btn { width: 100%; background: none; border: 1px solid var(--border); color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; font-size: 14px; padding: 12px; cursor: pointer; border-radius: 2px; transition: all 0.15s; margin-bottom: 14px; }
   .flip-btn:hover { border-color: var(--border-strong); color: var(--text); }
@@ -901,9 +910,15 @@ function renderRevCard() {
 
 function progressHTML(pct) {
   const card = revQueue[revIdx];
+  const sz = card.fontSize || 'md';
   return `<div class="review-progress-row">
     <div class="review-strip-track"><div class="review-strip-fill" style="width:${pct}%"></div></div>
     <span class="review-counter">${revIdx + 1} / ${revQueue.length}</span>
+    <div class="fs-toggle">
+      <button class="fs-btn${sz==='sm'?' active':''}" onclick="setCardFontSize('sm')" title="Small text" style="font-size:10px;">A</button>
+      <button class="fs-btn${sz==='md'?' active':''}" onclick="setCardFontSize('md')" title="Medium text" style="font-size:13px;">A</button>
+      <button class="fs-btn${sz==='lg'?' active':''}" onclick="setCardFontSize('lg')" title="Large text" style="font-size:16px;">A</button>
+    </div>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="editCurrentCard()">Edit</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="skipCard()">Skip</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="endReview()">End</button>
@@ -921,7 +936,8 @@ function ratingHTML(card) {
 
 function renderFlipRev(main, card, pct) {
   revFlipped = false;
-  main.innerHTML = `<div class="review-wrap">
+  const sz = card.fontSize || 'md';
+  main.innerHTML = `<div class="review-wrap fs-${sz}">
     ${progressHTML(pct)}
     <div class="flip-front"><div class="flip-face-label">Front</div><div class="flip-content">${md(card.front)}</div></div>
     <div class="flip-back" id="flip-back"><div class="flip-face-label">Back</div><div class="flip-content">${md(card.back)}</div></div>
@@ -953,6 +969,22 @@ function editCurrentCard() {
   openCardEditor(card.id);
 }
 
+function setCardFontSize(sz) {
+  const card = revQueue[revIdx];
+  if (!card) return;
+  card.fontSize = sz;
+  // persist to state
+  const sc = state.cards.find(c => c.id === card.id);
+  if (sc) { sc.fontSize = sz; save(); }
+  // update class on review wrap without full re-render
+  const wrap = document.querySelector('.review-wrap');
+  if (wrap) { wrap.className = 'review-wrap fs-' + sz; }
+  // update toggle button active states
+  document.querySelectorAll('.fs-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(`'${sz}'`));
+  });
+}
+
 function skipCard() {
   if (revQueue.length <= 1) return;
   const card = revQueue.splice(revIdx, 1)[0];
@@ -979,7 +1011,8 @@ function renderClozeRev(main, card, pct) {
   clozeAnswers = getClozeAnswers(card.clozeText);
   clozeCorrect = 0;
 
-  main.innerHTML = `<div class="review-wrap">
+  const sz = card.fontSize || 'md';
+  main.innerHTML = `<div class="review-wrap fs-${sz}">
     ${progressHTML(pct)}
     <div class="session-box">
       <div class="session-label">Fill in the blank · <span id="blank-counter">1 / ${clozeAnswers.length}</span></div>
