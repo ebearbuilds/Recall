@@ -452,7 +452,7 @@
     <!-- CLOZE -->
     <div id="cloze-fields" style="display:none;">
       <div class="field-label">Text with cloze deletions</div>
-      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank.</div>
+      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank. Select text + click <strong>+ cloze</strong> or <code>Cmd+Shift+C</code>.</div>
       <div class="rich-toolbar">
         <button class="rich-btn" onclick="wrapSel('ec','**','**')" title="Cmd+B"><b>B</b></button>
         <button class="rich-btn" onclick="wrapSel('ec','_','_')" title="Cmd+I"><em>I</em></button>
@@ -1117,7 +1117,18 @@ function taInsert(id, before, after, defaultText) {
 }
 
 function wrapSel(id, before, after) {
-  taInsert(id, before, after, 'text');
+  const el = document.getElementById(id);
+  const s = el.selectionStart, e = el.selectionEnd;
+  const raw = el.value.slice(s, e);
+  // trim trailing whitespace from selection so "text " becomes "**text** "
+  const trimmed = raw.trimEnd();
+  const trailingSpace = raw.slice(trimmed.length);
+  const sel = trimmed || 'text';
+  const replacement = before + sel + after + trailingSpace;
+  el.value = el.value.slice(0, s) + replacement + el.value.slice(e);
+  el.focus();
+  el.selectionStart = s + before.length;
+  el.selectionEnd = s + before.length + sel.length;
 }
 
 function insertBulletBtn(id) {
@@ -1185,6 +1196,8 @@ function taKey(e, id) {
   if (mod && e.key === 'b') { e.preventDefault(); wrapSel(id, '**', '**'); return; }
   if (mod && e.key === 'i') { e.preventDefault(); wrapSel(id, '_', '_'); return; }
   if (mod && e.key === 'e') { e.preventDefault(); wrapSel(id, '`', '`'); return; }
+  // Cmd+Shift+C = cloze wrap (only in cloze editor)
+  if (mod && e.shiftKey && e.key === 'C' && id === 'ec') { e.preventDefault(); insertClozeTag(); return; }
 
   // Auto-bullet: "- " or "* " at start of a line → stay as "- " (it's already the markdown syntax!)
   // What we DO want: Tab on a bullet line = indent it as sub-bullet
