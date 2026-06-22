@@ -147,17 +147,17 @@
   .rich-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
   .rich-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; font-size: 12px; padding: 4px 10px; cursor: pointer; border-radius: 2px; transition: all 0.12s; line-height: 1.4; }
   .rich-btn:hover { border-color: var(--border-strong); color: var(--text); }
-  .editor-ta { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: 2px; outline: none; resize: vertical; min-height: 90px; line-height: 1.6; transition: border-color 0.15s; margin-bottom: 16px; }
+  .editor-ta {
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+    padding: 12px 14px; border-radius: 2px; outline: none; resize: vertical;
+    min-height: 180px; line-height: 1.7; transition: border-color 0.15s; margin-bottom: 16px;
+  }
   .editor-ta:focus { border-color: var(--accent); }
-  .preview-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-bottom: 6px; }
-  .preview-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 2px; padding: 12px 14px; font-size: 14px; line-height: 1.7; min-height: 40px; margin-bottom: 16px; color: var(--text); }
-  .preview-box b { font-weight: 600; }
-  .preview-box em { font-style: italic; color: var(--text-muted); }
-  .preview-box code { font-family: 'Space Mono', monospace; font-size: 12px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 2px; }
-  .preview-box ul { padding-left: 18px; margin: 4px 0; }
-  .preview-box li { margin: 2px 0; }
   .cloze-hint { background: var(--purple-dim); border: 1px solid rgba(162,89,255,0.2); border-radius: 2px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.7; }
   .cloze-hint code { font-family: 'Space Mono', monospace; color: var(--purple); }
+  /* live bullet preview strip */
+  .bullet-hint { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-top: -12px; margin-bottom: 10px; }
   .cloze-blank-prev { background: var(--purple-dim); color: var(--purple); border-bottom: 1px solid var(--purple); padding: 0 3px; }
 
   /* code blocks */
@@ -196,7 +196,9 @@
   .flip-content b { font-weight: 600; }
   .flip-content em { font-style: italic; color: var(--text-muted); }
   .flip-content code { font-family: 'Space Mono', monospace; font-size: 13px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 2px; }
-  .flip-content ul { padding-left: 20px; margin: 6px 0; }
+  .flip-content ul { padding-left: 20px; margin: 6px 0; list-style: disc; }
+  .flip-content ul ul { list-style: circle; margin: 2px 0; }
+  .flip-content ul ul ul { list-style: square; }
   .flip-content li { margin: 4px 0; }
   /* font size overrides */
   .fs-sm .flip-content, .fs-sm .cloze-display { font-size: 13px; line-height: 1.65; }
@@ -230,7 +232,9 @@
   .cloze-display b { font-weight: 600; }
   .cloze-display em { font-style: italic; color: var(--text-muted); }
   .cloze-display code { font-family: 'Space Mono', monospace; font-size: 13px; background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 2px; }
-  .cloze-display ul { padding-left: 20px; margin: 6px 0; }
+  .cloze-display ul { padding-left: 20px; margin: 6px 0; list-style: disc; }
+  .cloze-display ul ul { list-style: circle; margin: 2px 0; }
+  .cloze-display ul ul ul { list-style: square; }
   .cloze-display li { margin: 4px 0; }
   .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
   .recall-input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 15px; padding: 11px 14px; border-radius: 2px; outline: none; transition: border-color 0.15s; }
@@ -426,47 +430,41 @@
     <div id="basic-fields">
       <div class="field-label">Front</div>
       <div class="rich-toolbar">
-        <button class="rich-btn" onclick="wrapText('ef','**','**')" title="Cmd+B"><b>B</b></button>
-        <button class="rich-btn" onclick="wrapText('ef','_','_')" title="Cmd+I"><em>I</em></button>
-        <button class="rich-btn" onclick="wrapText('ef','`','`')" title="Cmd+E">code</button>
-        <button class="rich-btn" onclick="insertBullet('ef')" title="Select lines">• list</button>
-        <button class="rich-btn" onclick="insertCodeBlock('ef')" title="Insert code block">{ } block</button>
+        <button class="rich-btn" onclick="wrapSel('ef','**','**')" title="Cmd+B"><b>B</b></button>
+        <button class="rich-btn" onclick="wrapSel('ef','_','_')" title="Cmd+I"><em>I</em></button>
+        <button class="rich-btn" onclick="wrapSel('ef','`','`')" title="Cmd+E">code</button>
+        <button class="rich-btn" onclick="insertBulletBtn('ef')">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlockBtn('ef')">{ } block</button>
       </div>
-      <textarea class="editor-ta" id="ef" placeholder="Question or prompt..." oninput="updatePreviews()" onkeydown="editorKey(event,'ef')"></textarea>
-      <div class="preview-label">Preview</div>
-      <div class="preview-box" id="pf"></div>
+      <textarea class="editor-ta" id="ef" placeholder="Question or prompt..." onkeydown="taKey(event,'ef')"></textarea>
 
       <div class="field-label">Back</div>
       <div class="rich-toolbar">
-        <button class="rich-btn" onclick="wrapText('eb','**','**')" title="Cmd+B"><b>B</b></button>
-        <button class="rich-btn" onclick="wrapText('eb','_','_')" title="Cmd+I"><em>I</em></button>
-        <button class="rich-btn" onclick="wrapText('eb','`','`')" title="Cmd+E">code</button>
-        <button class="rich-btn" onclick="insertBullet('eb')" title="Select lines">• list</button>
-        <button class="rich-btn" onclick="insertCodeBlock('eb')" title="Insert code block">{ } block</button>
+        <button class="rich-btn" onclick="wrapSel('eb','**','**')" title="Cmd+B"><b>B</b></button>
+        <button class="rich-btn" onclick="wrapSel('eb','_','_')" title="Cmd+I"><em>I</em></button>
+        <button class="rich-btn" onclick="wrapSel('eb','`','`')" title="Cmd+E">code</button>
+        <button class="rich-btn" onclick="insertBulletBtn('eb')">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlockBtn('eb')">{ } block</button>
       </div>
-      <textarea class="editor-ta" id="eb" placeholder="Answer..." oninput="updatePreviews()" onkeydown="editorKey(event,'eb')"></textarea>
-      <div class="preview-label">Preview</div>
-      <div class="preview-box" id="pb"></div>
+      <textarea class="editor-ta" id="eb" placeholder="Answer..." onkeydown="taKey(event,'eb')"></textarea>
     </div>
 
     <!-- CLOZE -->
     <div id="cloze-fields" style="display:none;">
       <div class="field-label">Text with cloze deletions</div>
-      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank, etc.</div>
+      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank.</div>
       <div class="rich-toolbar">
-        <button class="rich-btn" onclick="wrapText('ec','**','**')" title="Cmd+B"><b>B</b></button>
-        <button class="rich-btn" onclick="wrapText('ec','_','_')" title="Cmd+I"><em>I</em></button>
-        <button class="rich-btn" onclick="wrapText('ec','`','`')" title="Cmd+E">code</button>
-        <button class="rich-btn" onclick="insertBullet('ec')" title="Select lines">• list</button>
-        <button class="rich-btn" onclick="insertCodeBlock('ec')" title="Insert code block">{ } block</button>
+        <button class="rich-btn" onclick="wrapSel('ec','**','**')" title="Cmd+B"><b>B</b></button>
+        <button class="rich-btn" onclick="wrapSel('ec','_','_')" title="Cmd+I"><em>I</em></button>
+        <button class="rich-btn" onclick="wrapSel('ec','`','`')" title="Cmd+E">code</button>
+        <button class="rich-btn" onclick="insertBulletBtn('ec')">• list</button>
+        <button class="rich-btn" onclick="insertCodeBlockBtn('ec')">{ } block</button>
         <button class="rich-btn" onclick="insertClozeTag()">+ cloze</button>
       </div>
-      <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." oninput="updatePreviews()" onkeydown="editorKey(event,'ec')" style="min-height:120px;"></textarea>
-      <div class="preview-label">Preview (blanked)</div>
-      <div class="preview-box" id="pc"></div>
+      <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." onkeydown="taKey(event,'ec')" style="min-height:200px;"></textarea>
     </div>
 
-    <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — for filtered review)</span></div>
+    <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
     <div class="editor-tags-row" id="editor-tags-row"></div>
     <div class="tag-input-row">
       <input class="text-input" id="tag-input" type="text" placeholder="e.g. http, attacks, fundamentals..." style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addTagFromInput();}" />
@@ -654,18 +652,52 @@ function md(text) {
 
 function applyStructure(html) {
   const lines = html.split('\n');
-  const out = []; let inList = false;
+  const out = [];
+  let depthStack = []; // stack of indent levels currently open
+
+  const closeUntil = (depth) => {
+    while (depthStack.length > 0 && depthStack[depthStack.length - 1] >= depth) {
+      out.push('</ul>');
+      depthStack.pop();
+    }
+  };
+
   for (const line of lines) {
-    if (/^[•\-\*] /.test(line.trim())) {
-      if (!inList) { out.push('<ul>'); inList = true; }
-      out.push('<li>' + line.trim().replace(/^[•\-\*] /,'') + '</li>');
+    const bulletMatch = line.match(/^(\s*)[•\-\*] (.*)/);
+    if (bulletMatch) {
+      const depth = bulletMatch[1].length; // number of leading spaces
+      const content = bulletMatch[2];
+
+      if (depthStack.length === 0) {
+        // no open list yet
+        out.push('<ul>');
+        depthStack.push(depth);
+      } else {
+        const currentDepth = depthStack[depthStack.length - 1];
+        if (depth > currentDepth) {
+          // going deeper — open a nested ul
+          out.push('<ul>');
+          depthStack.push(depth);
+        } else if (depth < currentDepth) {
+          // going shallower — close until we match
+          closeUntil(depth + 1);
+          if (depthStack.length === 0 || depthStack[depthStack.length - 1] !== depth) {
+            out.push('<ul>');
+            depthStack.push(depth);
+          }
+        }
+        // same depth: just add a new li
+      }
+      out.push('<li>' + content + '</li>');
     } else {
-      if (inList) { out.push('</ul>'); inList = false; }
+      // not a bullet — close all open lists
+      closeUntil(-1);
       out.push(line || '<br>');
     }
   }
-  if (inList) out.push('</ul>');
-  return out.join('\n').replace(/\n(?!<)/g,'<br>').replace(/<br>\n/g,'<br>');
+  closeUntil(-1); // close any remaining open lists
+
+  return out.join('\n').replace(/\n(?!<)/g, '<br>').replace(/<br>\n/g, '<br>');
 }
 function mdClozeBlanked(text) {
   if (!text) return '';
@@ -953,16 +985,48 @@ function setCardType(t) {
   updatePreviews();
 }
 
-function updatePreviews() {
-  const modal = document.querySelector('.modal');
-  const modalScroll = modal ? modal.scrollTop : 0;
-  if (cardType === 'basic') {
-    document.getElementById('pf').innerHTML = md(document.getElementById('ef').value);
-    document.getElementById('pb').innerHTML = md(document.getElementById('eb').value);
+function openCardEditor(cardId) {
+  editingCardId = cardId || null;
+  clozeN = 1;
+  if (cardId) {
+    const c = state.cards.find(x => x.id === cardId);
+    document.getElementById('card-modal-title').textContent = 'Edit card';
+    setCardType(c.type);
+    if (c.type === 'basic') {
+      document.getElementById('ef').value = c.front || '';
+      document.getElementById('eb').value = c.back || '';
+    } else {
+      document.getElementById('ec').value = c.clozeText || '';
+    }
+    currentEditorTags = [...(c.tags || [])];
   } else {
-    document.getElementById('pc').innerHTML = mdClozeBlanked(document.getElementById('ec').value);
+    document.getElementById('card-modal-title').textContent = 'New card';
+    setCardType('basic');
+    document.getElementById('ef').value = '';
+    document.getElementById('eb').value = '';
+    document.getElementById('ec').value = '';
+    currentEditorTags = [];
   }
-  if (modal) requestAnimationFrame(() => { modal.scrollTop = modalScroll; });
+  renderEditorTags();
+  document.getElementById('card-overlay').classList.add('open');
+  setTimeout(() => document.getElementById(cardType === 'cloze' ? 'ec' : 'ef').focus(), 50);
+}
+
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
+
+function setCardType(t) {
+  cardType = t;
+  document.getElementById('etype-basic').classList.toggle('active', t === 'basic');
+  document.getElementById('etype-cloze').classList.toggle('active', t === 'cloze');
+  document.getElementById('basic-fields').style.display = t === 'basic' ? 'block' : 'none';
+  document.getElementById('cloze-fields').style.display = t === 'cloze' ? 'block' : 'none';
 }
 
 function renderEditorTags() {
@@ -971,20 +1035,249 @@ function renderEditorTags() {
     `<span class="tag-pill removable" onclick="removeEditorTag('${esc(t)}')" title="Click to remove">${esc(t)}</span>`
   ).join('');
 }
-
 function addTagFromInput() {
   const input = document.getElementById('tag-input');
   const raw = input.value.trim().toLowerCase();
   if (!raw) return;
-  // support comma-separated multi-add
   raw.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
     if (!currentEditorTags.includes(t)) currentEditorTags.push(t);
   });
-  input.value = '';
+  input.value = ''; renderEditorTags(); input.focus();
+}
+function removeEditorTag(tag) {
+  currentEditorTags = currentEditorTags.filter(t => t !== tag);
   renderEditorTags();
-  input.focus();
 }
 
+function saveCard() {
+  if (!activeDeckId) { closeCardEditor(); return; }
+  if (cardType === 'basic') {
+    const front = document.getElementById('ef').value.trim();
+    const back = document.getElementById('eb').value.trim();
+    document.getElementById('ef').style.borderColor = front ? '' : 'var(--red)';
+    document.getElementById('eb').style.borderColor = back ? '' : 'var(--red)';
+    if (!front || !back) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.front = front; c.back = back; c.type = 'basic'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'basic', front, back, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else {
+    const ct = document.getElementById('ec').value.trim();
+    document.getElementById('ec').style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
+    if (!ct || !ct.includes('{{c')) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  }
+  save();
+  const wasInReview = resumeReviewAfterEdit;
+  resumeReviewAfterEdit = false;
+  closeCardEditor();
+  if (wasInReview) {
+    const updatedCard = state.cards.find(c => c.id === revQueue[revIdx]?.id);
+    if (updatedCard) revQueue[revIdx] = updatedCard;
+    renderRevCard();
+  } else {
+    renderDeckMain();
+    renderSidebar();
+  }
+}
+
+function resetCard(id) {
+  const c = state.cards.find(x => x.id === id);
+  if (!c) return;
+  c.due = Date.now(); c.interval = 1;
+  save(); renderDeckMain(); renderSidebar();
+}
+
+function deleteCard(id) {
+  const btn = document.querySelector(`[data-del="${id}"]`);
+  if (!btn) return;
+  btn.textContent = 'Sure?';
+  btn.style.color = 'var(--red)'; btn.style.borderColor = 'var(--red)';
+  btn.onclick = e => { e.stopPropagation(); state.cards = state.cards.filter(c => c.id !== id); save(); renderDeckMain(); renderSidebar(); };
+  setTimeout(() => { if (activeDeckId) renderDeckMain(); }, 3000);
+}
+
+// ─── TEXTAREA EDITOR ──────────────────────────────────────────────────────────
+function taInsert(id, before, after, defaultText) {
+  const el = document.getElementById(id);
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e) || defaultText || '';
+  const replacement = before + sel + after;
+  el.value = el.value.slice(0, s) + replacement + el.value.slice(e);
+  el.focus();
+  el.selectionStart = s + before.length;
+  el.selectionEnd = s + before.length + sel.length;
+}
+
+function wrapSel(id, before, after) {
+  taInsert(id, before, after, 'text');
+}
+
+function insertBulletBtn(id) {
+  const el = document.getElementById(id);
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e);
+  if (sel.includes('\n')) {
+    // multi-line: bullet each line
+    const bulleted = sel.split('\n').map(l => {
+      if (l.trim() === '') return l;
+      if (/^\s*- /.test(l)) return l; // already a bullet
+      return '- ' + l;
+    }).join('\n');
+    el.value = el.value.slice(0, s) + bulleted + el.value.slice(e);
+    el.selectionStart = s; el.selectionEnd = s + bulleted.length;
+  } else {
+    // insert bullet at start of current line
+    const beforeCursor = el.value.slice(0, s);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const line = el.value.slice(lineStart, e || el.value.indexOf('\n', lineStart));
+    if (/^(\s*)- /.test(line)) {
+      // already a bullet — add sub-bullet indentation
+      const indent = (line.match(/^(\s*)/) || ['', ''])[1];
+      const newIndent = indent + '  ';
+      el.value = el.value.slice(0, lineStart) + newIndent + line.trimStart() + el.value.slice(lineStart + line.length);
+    } else {
+      el.value = el.value.slice(0, lineStart) + '- ' + el.value.slice(lineStart);
+      el.selectionStart = el.selectionEnd = s + 2;
+    }
+  }
+  el.focus();
+}
+
+function insertCodeBlockBtn(id) {
+  const el = document.getElementById(id);
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e).trim() || 'your code here';
+  const pre = (s === 0 || el.value[s - 1] === '\n') ? '' : '\n';
+  const block = pre + '```python\n' + sel + '\n```\n';
+  el.value = el.value.slice(0, s) + block + el.value.slice(e);
+  el.selectionStart = s + pre.length + 10;
+  el.selectionEnd = s + pre.length + 10 + sel.length;
+  el.focus();
+}
+
+function insertClozeTag() {
+  const el = document.getElementById('ec');
+  const scrollTop = el.scrollTop;
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e) || 'answer';
+  const tag = `{{c${clozeN}::${sel}}}`;
+  clozeN++;
+  el.value = el.value.slice(0, s) + tag + el.value.slice(e);
+  el.selectionStart = el.selectionEnd = s + tag.length;
+  el.scrollTop = scrollTop;
+  el.focus();
+}
+
+function taKey(e, id) {
+  const el = document.getElementById(id);
+  const isMac = navigator.platform.toUpperCase().includes('MAC');
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+
+  // Keyboard shortcuts
+  if (mod && e.key === 'b') { e.preventDefault(); wrapSel(id, '**', '**'); return; }
+  if (mod && e.key === 'i') { e.preventDefault(); wrapSel(id, '_', '_'); return; }
+  if (mod && e.key === 'e') { e.preventDefault(); wrapSel(id, '`', '`'); return; }
+
+  // Auto-bullet: "- " or "* " at start of a line → stay as "- " (it's already the markdown syntax!)
+  // What we DO want: Tab on a bullet line = indent it as sub-bullet
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = el.selectionStart;
+    const beforeCursor = el.value.slice(0, s);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const lineEnd = el.value.indexOf('\n', s);
+    const end = lineEnd === -1 ? el.value.length : lineEnd;
+    const line = el.value.slice(lineStart, end);
+
+    if (/^\s*- /.test(line)) {
+      if (e.shiftKey) {
+        // dedent: remove 2 spaces from start
+        if (line.startsWith('  ')) {
+          el.value = el.value.slice(0, lineStart) + line.slice(2) + el.value.slice(end);
+          el.selectionStart = el.selectionEnd = Math.max(lineStart, s - 2);
+        }
+      } else {
+        // indent: add 2 spaces
+        el.value = el.value.slice(0, lineStart) + '  ' + line + el.value.slice(end);
+        el.selectionStart = el.selectionEnd = s + 2;
+      }
+    } else {
+      // not a bullet — insert 4 spaces
+      el.value = el.value.slice(0, s) + '    ' + el.value.slice(s);
+      el.selectionStart = el.selectionEnd = s + 4;
+    }
+    return;
+  }
+
+  // Enter key: if on a bullet line, continue the bullet on the next line
+  if (e.key === 'Enter') {
+    const s = el.selectionStart;
+    const beforeCursor = el.value.slice(0, s);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const line = beforeCursor.slice(lineStart);
+    const bulletMatch = line.match(/^(\s*)- /);
+    if (bulletMatch) {
+      const lineContent = line.slice(bulletMatch[0].length);
+      if (lineContent.trim() === '') {
+        // empty bullet — exit list
+        e.preventDefault();
+        // remove the empty "- " and insert plain newline
+        el.value = el.value.slice(0, lineStart) + '\n' + el.value.slice(s);
+        el.selectionStart = el.selectionEnd = lineStart + 1;
+      } else {
+        // continue list with same indentation
+        e.preventDefault();
+        const indent = bulletMatch[1];
+        const insert = '\n' + indent + '- ';
+        el.value = el.value.slice(0, s) + insert + el.value.slice(s);
+        el.selectionStart = el.selectionEnd = s + insert.length;
+      }
+    }
+  }
+}
+
+function setupCEKeydown() {} // no-op, taKey handles everything via onkeydown
+
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
+
+function setCardType(t) {
+  cardType = t;
+  document.getElementById('etype-basic').classList.toggle('active', t === 'basic');
+  document.getElementById('etype-cloze').classList.toggle('active', t === 'cloze');
+  document.getElementById('basic-fields').style.display = t === 'basic' ? 'block' : 'none';
+  document.getElementById('cloze-fields').style.display = t === 'cloze' ? 'block' : 'none';
+}
+
+function renderEditorTags() {
+  const row = document.getElementById('editor-tags-row');
+  row.innerHTML = currentEditorTags.map(t =>
+    `<span class="tag-pill removable" onclick="removeEditorTag('${esc(t)}')" title="Click to remove">${esc(t)}</span>`
+  ).join('');
+}
+function addTagFromInput() {
+  const input = document.getElementById('tag-input');
+  const raw = input.value.trim().toLowerCase();
+  if (!raw) return;
+  raw.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+    if (!currentEditorTags.includes(t)) currentEditorTags.push(t);
+  });
+  input.value = ''; renderEditorTags(); input.focus();
+}
 function removeEditorTag(tag) {
   currentEditorTags = currentEditorTags.filter(t => t !== tag);
   renderEditorTags();
@@ -1045,72 +1338,6 @@ function deleteCard(id) {
   btn.style.color = 'var(--red)'; btn.style.borderColor = 'var(--red)';
   btn.onclick = e => { e.stopPropagation(); state.cards = state.cards.filter(c => c.id !== id); save(); renderDeckMain(); renderSidebar(); };
   setTimeout(() => { if (activeDeckId) renderDeckMain(); }, 3000);
-}
-
-// ─── RICH TEXT EDITOR ─────────────────────────────────────────────────────────
-function wrapText(id, before, after) {
-  const el = document.getElementById(id);
-  const s = el.selectionStart, e = el.selectionEnd;
-  const sel = el.value.slice(s, e) || 'text';
-  el.value = el.value.slice(0, s) + before + sel + after + el.value.slice(e);
-  el.focus(); el.selectionStart = s + before.length; el.selectionEnd = s + before.length + sel.length;
-  updatePreviews();
-}
-function insertBullet(id) {
-  const el = document.getElementById(id);
-  const s = el.selectionStart, e = el.selectionEnd;
-  const sel = el.value.slice(s, e);
-  if (sel.includes('\n')) {
-    const bulleted = sel.split('\n').map(l => l.trim().length === 0 ? l : (l.startsWith('- ') ? l : '- ' + l)).join('\n');
-    el.value = el.value.slice(0, s) + bulleted + el.value.slice(e);
-    el.selectionStart = s; el.selectionEnd = s + bulleted.length;
-  } else if (sel.length > 0) {
-    const pre = s === 0 || el.value[s-1] === '\n' ? '' : '\n';
-    const rep = pre + '- ' + sel;
-    el.value = el.value.slice(0, s) + rep + el.value.slice(e);
-    el.selectionStart = s + pre.length; el.selectionEnd = s + pre.length + 2 + sel.length;
-  } else {
-    const before = el.value.slice(0, s), after = el.value.slice(s);
-    const pre = before.length === 0 || before.endsWith('\n') ? '' : '\n';
-    el.value = before + pre + '- ' + after;
-    el.selectionStart = el.selectionEnd = s + pre.length + 2;
-  }
-  el.focus(); updatePreviews();
-}
-function insertClozeTag() {
-  const el = document.getElementById('ec');
-  const scrollTop = el.scrollTop;
-  const s = el.selectionStart, e = el.selectionEnd;
-  const sel = el.value.slice(s, e) || 'answer';
-  const tag = `{{c${clozeN}::${sel}}}`;
-  clozeN++;
-  el.value = el.value.slice(0, s) + tag + el.value.slice(e);
-  el.selectionStart = el.selectionEnd = s + tag.length;
-  el.scrollTop = scrollTop;
-  el.focus();
-  updatePreviews();
-}
-function insertCodeBlock(id) {
-  const el = document.getElementById(id);
-  const s = el.selectionStart, e = el.selectionEnd;
-  const sel = el.value.slice(s, e);
-  const code = sel.length > 0 ? sel : 'your code here';
-  const block = `\`\`\`python\n${code}\n\`\`\``;
-  const pre = s === 0 || el.value[s-1] === '\n' ? '' : '\n';
-  el.value = el.value.slice(0, s) + pre + block + el.value.slice(e);
-  el.focus();
-  // position cursor inside the block
-  const insertPos = s + pre.length + 10; // after ```python\n
-  el.selectionStart = insertPos;
-  el.selectionEnd = insertPos + code.length;
-  updatePreviews();
-}
-
-function editorKey(e, id) {
-  const mod = navigator.platform.toUpperCase().includes('MAC') ? e.metaKey : e.ctrlKey;
-  if (mod && e.key === 'b') { e.preventDefault(); wrapText(id, '**', '**'); }
-  if (mod && e.key === 'i') { e.preventDefault(); wrapText(id, '_', '_'); }
-  if (mod && e.key === 'e') { e.preventDefault(); wrapText(id, '`', '`'); }
 }
 
 // ─── REVIEW ───────────────────────────────────────────────────────────────────
@@ -1695,6 +1922,7 @@ function closeFocusStats() { document.getElementById('focus-stats-overlay').clas
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderSidebar();
+setupCEKeydown();
 </script>
 <!-- FOCUS SETUP MODAL -->
 <div class="focus-overlay" id="focus-overlay" onclick="if(event.target===this)closeFocusModal()">
