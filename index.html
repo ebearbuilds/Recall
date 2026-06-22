@@ -330,18 +330,21 @@
   .fsp-fill-break { background: var(--blue); }
   .fsp-stats { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; margin-bottom: 12px; }
   .fsp-actions { display: flex; gap: 6px; }
-  .fsp-defer-btn {
-    flex: 1; background: none; border: 1px solid var(--border); color: var(--text-muted);
-    font-family: 'Space Grotesk', sans-serif; font-size: 12px; padding: 7px 10px;
-    cursor: pointer; border-radius: 2px; transition: all 0.12s;
-  }
-  .fsp-defer-btn:hover { border-color: var(--border-strong); color: var(--text); }
   .fsp-end-btn {
     flex: 1; background: none; border: 1px solid var(--border); color: var(--text-muted);
     font-family: 'Space Grotesk', sans-serif; font-size: 12px; padding: 7px 10px;
     cursor: pointer; border-radius: 2px; transition: all 0.12s;
   }
   .fsp-end-btn:hover { border-color: var(--red); color: var(--red); }
+  /* minimized state — just a pill in the corner */
+  .focus-session-panel.minimized { padding: 10px 16px; min-width: 0; }
+  .focus-session-panel.minimized .fsp-expanded { display: none; }
+  .fsp-mini { display: none; align-items: center; gap: 10px; }
+  .focus-session-panel.minimized .fsp-mini { display: flex; }
+  .fsp-mini-time { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; }
+  .fsp-mini-topic { font-size: 12px; color: var(--text-muted); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fsp-mini-expand { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 13px; padding: 0 0 0 4px; }
+  .fsp-mini-expand:hover { color: var(--text); }
 
   /* summary modal */
   .focus-summary {
@@ -365,17 +368,6 @@
   .fs-hi-dur { font-size: 12px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
   .fs-hi-date { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; }
 
-  /* defer input overlay */
-  .defer-input-overlay {
-    position: fixed; bottom: 120px; right: 24px; z-index: 300;
-    background: var(--bg-card); border: 1px solid var(--border-strong);
-    border-radius: 4px; padding: 14px; width: 280px;
-    display: none;
-  }
-  .defer-input-overlay.show { display: block; }
-  .defer-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 14px; padding: 9px 12px; border-radius: 2px; outline: none; margin-bottom: 8px; }
-  .defer-input:focus { border-color: var(--green); }
-  .defer-actions { display: flex; gap: 6px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -396,6 +388,7 @@
       <span class="focus-dot"></span>
       <span id="focus-nav-label">Focus</span>
     </button>
+    <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="openFocusStats()">Sessions</button>
     <div class="due-pill" id="due-pill">0 due</div>
     <button class="btn-add" onclick="openCardEditor()">+ Add card</button>
   </div>
@@ -1400,14 +1393,24 @@ let focusCardsAtStart = 0; // to calculate cards reviewed in session
 let focusStartTime = null;
 let pendingSessionData = null; // stored when summary shown
 
+let panelMinimized = true; // start minimized by default
+
 function handleFocusNavClick() {
   if (focusMode === 'focus' || focusMode === 'break') {
-    // toggle session panel visibility
     const panel = document.getElementById('focus-session-panel');
     panel.classList.toggle('show');
+    if (panel.classList.contains('show') && panelMinimized) {
+      panel.classList.add('minimized');
+    }
   } else {
     openFocusModal();
   }
+}
+
+function togglePanelExpand() {
+  const panel = document.getElementById('focus-session-panel');
+  panelMinimized = !panelMinimized;
+  panel.classList.toggle('minimized', panelMinimized);
 }
 
 function openFocusModal() {
@@ -1460,12 +1463,12 @@ function launchTimer(mode, minutes) {
   focusMode = mode;
   focusTotalSeconds = minutes * 60;
   focusSecondsLeft = focusTotalSeconds;
+  panelMinimized = true; // always start minimized
   if (focusTimer) clearInterval(focusTimer);
   focusTimer = setInterval(timerTick, 1000);
 
-  // show panel
   const panel = document.getElementById('focus-session-panel');
-  panel.classList.add('show');
+  panel.classList.add('show', 'minimized');
   updateSessionPanel();
   updateNavBtn();
 }
@@ -1475,11 +1478,8 @@ function timerTick() {
   updateSessionPanel();
   if (focusSecondsLeft <= 0) {
     clearInterval(focusTimer);
-    if (focusMode === 'focus') {
-      timerComplete();
-    } else {
-      breakComplete();
-    }
+    if (focusMode === 'focus') timerComplete();
+    else breakComplete();
   }
 }
 
@@ -1489,23 +1489,25 @@ function updateSessionPanel() {
   const timeStr = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
   const pct = (focusSecondsLeft / focusTotalSeconds) * 100;
 
+  // expanded view
   const timeEl = document.getElementById('fsp-time');
-  timeEl.textContent = timeStr;
-  timeEl.classList.toggle('urgent', focusMode === 'focus' && focusSecondsLeft <= 60);
-
-  document.getElementById('fsp-topic').textContent = focusTopic;
-  document.getElementById('fsp-mode').textContent = focusMode === 'focus' ? 'Focus' : 'Break';
-  document.getElementById('fsp-mode').className = `fsp-mode ${focusMode}`;
-  document.getElementById('fsp-progress-fill').style.width = pct + '%';
-  document.getElementById('fsp-progress-fill').className = `fsp-progress-fill fsp-fill-${focusMode}`;
-
-  // session stats
+  if (timeEl) { timeEl.textContent = timeStr; timeEl.classList.toggle('urgent', focusMode === 'focus' && focusSecondsLeft <= 60); }
+  const topicEl = document.getElementById('fsp-topic');
+  if (topicEl) topicEl.textContent = focusTopic;
+  const modeEl = document.getElementById('fsp-mode');
+  if (modeEl) { modeEl.textContent = focusMode === 'focus' ? 'Focus' : 'Break'; modeEl.className = `fsp-mode ${focusMode}`; }
+  const fillEl = document.getElementById('fsp-progress-fill');
+  if (fillEl) { fillEl.style.width = pct + '%'; fillEl.className = `fsp-progress-fill fsp-fill-${focusMode}`; }
   const elapsed = focusMode === 'focus' ? Math.round((focusDuration * 60 - focusSecondsLeft) / 60) : 0;
-  const cardsReviewed = revIdx > 0 ? revIdx : 0;
-  document.getElementById('fsp-stats').textContent =
-    `${elapsed} min elapsed · ${cardsReviewed} cards reviewed · ${focusDeferred.length} deferred`;
+  const statsEl = document.getElementById('fsp-stats');
+  if (statsEl) statsEl.textContent = `${elapsed} min elapsed · ${revIdx > 0 ? revIdx : 0} cards reviewed`;
 
-  // update nav label
+  // minimized view
+  const miniTime = document.getElementById('fsp-mini-time');
+  if (miniTime) { miniTime.textContent = timeStr; miniTime.style.color = (focusMode === 'focus' && focusSecondsLeft <= 60) ? 'var(--red)' : 'var(--text)'; }
+  const miniTopic = document.getElementById('fsp-mini-topic');
+  if (miniTopic) miniTopic.textContent = focusTopic;
+
   updateNavBtn();
   document.title = `${timeStr} — ${focusTopic} · Recall`;
 }
@@ -1571,23 +1573,6 @@ function endFocusSession() {
   showSummary(pendingSessionData);
 }
 
-// ─── DEFER ────────────────────────────────────────────────────────────────────
-function openDeferInput() {
-  document.getElementById('defer-overlay').classList.add('show');
-  setTimeout(() => document.getElementById('defer-input').focus(), 50);
-}
-function closeDeferInput() {
-  document.getElementById('defer-overlay').classList.remove('show');
-  document.getElementById('defer-input').value = '';
-}
-function saveDefer() {
-  const text = document.getElementById('defer-input').value.trim();
-  if (!text) return;
-  focusDeferred.push(text);
-  closeDeferInput();
-  updateSessionPanel();
-}
-
 // ─── BREAK ────────────────────────────────────────────────────────────────────
 function setBreakDur(mins, btn) {
   breakDuration = mins;
@@ -1617,58 +1602,20 @@ function showSummary(data) {
   document.getElementById('fs-sub').textContent =
     `"${data.topic}" · ${data.duration} min${data.endedEarly ? ' (ended early)' : ''}`;
 
-  // stats row
-  const statsRow = document.getElementById('fs-stats-row');
-  statsRow.innerHTML = `
+  document.getElementById('fs-stats-row').innerHTML = `
     <div class="fs-stat"><div class="fs-stat-num" style="color:var(--green)">${data.duration}</div><div class="fs-stat-lbl">Minutes</div></div>
     <div class="fs-stat"><div class="fs-stat-num" style="color:var(--blue)">${data.cardsReviewed}</div><div class="fs-stat-lbl">Cards reviewed</div></div>
-    <div class="fs-stat"><div class="fs-stat-num" style="color:var(--coral)">${data.deferred.length}</div><div class="fs-stat-lbl">Deferred</div></div>
   `;
 
-  // deferred thoughts
-  const deferSection = document.getElementById('fs-deferred-section');
-  if (data.deferred.length > 0) {
-    deferSection.innerHTML = `
-      <div class="fs-section-label">Deferred thoughts</div>
-      <div class="fs-defer-list">
-        ${data.deferred.map(d => `<div class="fs-defer-item">— ${esc(d)}</div>`).join('')}
-      </div>`;
-  } else {
-    deferSection.innerHTML = '';
-  }
-
-  // linked deck review button
   const reviewBtn = document.getElementById('fs-review-btn');
   if (data.linkedDeckId) {
     const deck = state.decks.find(d => d.id === data.linkedDeckId);
     const due = state.cards.filter(c => c.deckId === data.linkedDeckId && c.due <= Date.now()).length;
-    if (deck && due > 0) {
-      reviewBtn.style.display = 'block';
-      reviewBtn.textContent = `Review ${due} due in "${deck.name}" →`;
-    } else {
-      reviewBtn.style.display = 'none';
-    }
-  } else {
-    reviewBtn.style.display = 'none';
-  }
+    if (deck && due > 0) { reviewBtn.style.display = 'block'; reviewBtn.textContent = `Review ${due} due in "${deck.name}" →`; }
+    else reviewBtn.style.display = 'none';
+  } else { reviewBtn.style.display = 'none'; }
 
-  // session history (last 5)
-  const histSection = document.getElementById('fs-history-section');
-  const recent = [...state.focusSessions].reverse().slice(0, 5);
-  if (recent.length > 1) {
-    histSection.innerHTML = `
-      <div class="fs-section-label">Recent sessions</div>
-      <div class="fs-history">
-        ${recent.map(s => `<div class="fs-history-item">
-          <div class="fs-hi-topic">${esc(s.topic)}</div>
-          <div class="fs-hi-dur">${s.duration}m</div>
-          <div class="fs-hi-date">${new Date(s.completedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
-        </div>`).join('')}
-      </div>`;
-  } else {
-    histSection.innerHTML = '';
-  }
-
+  document.getElementById('fs-history-section').innerHTML = '';
   document.getElementById('focus-summary-overlay').classList.add('open');
   updateNavBtn();
 }
@@ -1680,11 +1627,71 @@ function closeSummary() {
 
 function startDeckReviewFromSession() {
   if (pendingSessionData?.linkedDeckId) {
-    closeSummary();
-    selectDeck(pendingSessionData.linkedDeckId);
-    startReview(false);
+    closeSummary(); selectDeck(pendingSessionData.linkedDeckId); startReview(false);
   }
 }
+
+// ─── FOCUS STATS ──────────────────────────────────────────────────────────────
+function openFocusStats() {
+  const sessions = state.focusSessions || [];
+  const totalMins = sessions.reduce((s, x) => s + (x.duration || 0), 0);
+  const totalSessions = sessions.length;
+  const totalCards = sessions.reduce((s, x) => s + (x.cardsReviewed || 0), 0);
+
+  // topic breakdown
+  const topicTotals = {};
+  sessions.forEach(s => { topicTotals[s.topic] = (topicTotals[s.topic] || 0) + s.duration; });
+  const topTopics = Object.entries(topicTotals).sort((a,b) => b[1]-a[1]).slice(0, 5);
+
+  const hrs = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  const totalTimeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+
+  document.getElementById('fstats-totals').innerHTML = `
+    <div class="fs-stat"><div class="fs-stat-num" style="color:var(--green)">${totalTimeStr}</div><div class="fs-stat-lbl">Total time</div></div>
+    <div class="fs-stat"><div class="fs-stat-num" style="color:var(--blue)">${totalSessions}</div><div class="fs-stat-lbl">Sessions</div></div>
+    <div class="fs-stat"><div class="fs-stat-num" style="color:var(--purple)">${totalCards}</div><div class="fs-stat-lbl">Cards reviewed</div></div>
+    ${topTopics.length > 0 ? `<div style="width:100%;padding-top:16px;border-top:1px solid var(--border);">
+      <div class="fs-section-label" style="margin-bottom:10px;">Time by topic</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${topTopics.map(([topic, mins]) => {
+          const pct = Math.round(mins / totalMins * 100);
+          const h = Math.floor(mins/60), m = mins%60;
+          const dur = h > 0 ? `${h}h ${m}m` : `${m}m`;
+          return `<div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:13px;color:var(--text)">${esc(topic)}</span>
+              <span style="font-size:12px;color:var(--text-muted);font-family:'Space Mono',monospace;">${dur}</span>
+            </div>
+            <div style="height:3px;background:var(--border);border-radius:1px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:var(--green);border-radius:1px;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+  `;
+
+  const list = document.getElementById('fstats-list');
+  if (sessions.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-faint);font-size:13px;padding:20px 0;">No sessions yet.</div>';
+  } else {
+    list.innerHTML = [...sessions].reverse().map(s => {
+      const h = Math.floor(s.duration/60), m = s.duration%60;
+      const dur = h > 0 ? `${h}h ${m}m` : `${m}m`;
+      return `<div class="fs-history-item">
+        <div class="fs-hi-topic">${esc(s.topic)}</div>
+        <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;">${s.cardsReviewed || 0} cards</div>
+        <div class="fs-hi-dur">${dur}</div>
+        <div class="fs-hi-date">${new Date(s.completedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('focus-stats-overlay').classList.add('open');
+}
+
+function closeFocusStats() { document.getElementById('focus-stats-overlay').classList.remove('open'); }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderSidebar();
@@ -1723,26 +1730,28 @@ renderSidebar();
 
 <!-- ACTIVE SESSION PANEL (floating bottom-right) -->
 <div class="focus-session-panel" id="focus-session-panel">
-  <div class="fsp-header">
-    <div class="fsp-topic" id="fsp-topic">—</div>
-    <span class="fsp-mode focus" id="fsp-mode">Focus</span>
+  <!-- minimized pill -->
+  <div class="fsp-mini">
+    <span class="focus-dot" style="background:var(--green);animation:pulse 1.5s infinite;"></span>
+    <span class="fsp-mini-topic" id="fsp-mini-topic">—</span>
+    <span class="fsp-mini-time" id="fsp-mini-time">25:00</span>
+    <button class="fsp-mini-expand" onclick="togglePanelExpand()" title="Expand">↑</button>
   </div>
-  <div class="fsp-time" id="fsp-time">25:00</div>
-  <div class="fsp-progress"><div class="fsp-progress-fill fsp-fill-focus" id="fsp-progress-fill" style="width:100%"></div></div>
-  <div class="fsp-stats" id="fsp-stats">0 cards reviewed this session</div>
-  <div class="fsp-actions">
-    <button class="fsp-defer-btn" onclick="openDeferInput()">+ Defer thought</button>
-    <button class="fsp-end-btn" onclick="endFocusSession()">End session</button>
-  </div>
-</div>
-
-<!-- DEFER THOUGHT INPUT -->
-<div class="defer-input-overlay" id="defer-overlay">
-  <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:6px;">Defer a thought</div>
-  <input class="defer-input" id="defer-input" type="text" placeholder="What's on your mind?" onkeydown="if(event.key==='Enter')saveDefer(); if(event.key==='Escape')closeDeferInput();" />
-  <div class="defer-actions">
-    <button class="btn-cancel" style="padding:6px 14px;font-size:12px;" onclick="closeDeferInput()">Cancel</button>
-    <button class="btn-save" style="padding:6px 14px;font-size:12px;" onclick="saveDefer()">Save</button>
+  <!-- expanded -->
+  <div class="fsp-expanded">
+    <div class="fsp-header">
+      <div class="fsp-topic" id="fsp-topic">—</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="fsp-mode focus" id="fsp-mode">Focus</span>
+        <button onclick="togglePanelExpand()" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:14px;padding:0;line-height:1;" title="Minimize">↓</button>
+      </div>
+    </div>
+    <div class="fsp-time" id="fsp-time">25:00</div>
+    <div class="fsp-progress"><div class="fsp-progress-fill fsp-fill-focus" id="fsp-progress-fill" style="width:100%"></div></div>
+    <div class="fsp-stats" id="fsp-stats">0 min elapsed</div>
+    <div class="fsp-actions">
+      <button class="fsp-end-btn" onclick="endFocusSession()">End session</button>
+    </div>
   </div>
 </div>
 
@@ -1752,7 +1761,6 @@ renderSidebar();
     <div class="fs-title" id="fs-title">Done</div>
     <div class="fs-sub" id="fs-sub">Session complete</div>
     <div class="fs-stats-row" id="fs-stats-row"></div>
-    <div id="fs-deferred-section"></div>
     <div style="margin-bottom:20px;">
       <div class="fs-section-label">Break</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;" id="break-btn-row">
@@ -1762,10 +1770,22 @@ renderSidebar();
       </div>
       <button class="btn-save" style="width:100%;" onclick="startBreak()">Take a break</button>
     </div>
-    <button class="btn-secondary" style="width:100%;margin-bottom:8px;" id="fs-review-btn" onclick="startDeckReviewFromSession()" style="display:none;">Review linked deck →</button>
+    <button class="btn-secondary" style="width:100%;margin-bottom:8px;display:none;" id="fs-review-btn" onclick="startDeckReviewFromSession()">Review linked deck →</button>
     <button class="btn-cancel" style="width:100%;" onclick="closeSummary()">Close</button>
-
     <div id="fs-history-section" style="margin-top:24px;"></div>
+  </div>
+</div>
+
+<!-- FOCUS STATS MODAL -->
+<div class="focus-overlay" id="focus-stats-overlay" onclick="if(event.target===this)closeFocusStats()">
+  <div class="focus-summary" style="width:560px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="fs-title" style="font-size:28px;margin-bottom:0;">Sessions</div>
+      <button class="btn-cancel" onclick="closeFocusStats()">Close</button>
+    </div>
+    <div id="fstats-totals" style="display:flex;gap:28px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap;"></div>
+    <div class="fs-section-label">Session history</div>
+    <div id="fstats-list" style="display:flex;flex-direction:column;gap:1px;"></div>
   </div>
 </div>
 
