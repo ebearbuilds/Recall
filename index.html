@@ -85,8 +85,22 @@
   .tag-filter-row .tag-pill.all.active { background: var(--text); color: var(--bg); }
   .card-tags-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .editor-tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .tag-input-row { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tag-input-row { display: flex; gap: 6px; margin-bottom: 16px; position: relative; }
   .tag-input-row input { flex: 1; }
+  .tag-autocomplete {
+    position: absolute; top: 100%; left: 0; right: 44px;
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    border-radius: 2px; z-index: 100; max-height: 180px; overflow-y: auto;
+    display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .tag-autocomplete.show { display: block; }
+  .tag-ac-item {
+    padding: 8px 12px; font-size: 13px; cursor: pointer; color: var(--text-muted);
+    font-family: 'Space Mono', monospace; transition: background 0.1s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tag-ac-item:hover, .tag-ac-item.selected { background: var(--bg-hover); color: var(--text); }
+  .tag-ac-item mark { background: none; color: var(--purple); font-weight: 700; }
 
   /* MAIN AREA */
   .main { padding: 36px 40px; }
@@ -452,7 +466,7 @@
     <!-- CLOZE -->
     <div id="cloze-fields" style="display:none;">
       <div class="field-label">Text with cloze deletions</div>
-      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank. Select text + click <strong>+ cloze</strong> or <code>Cmd+Shift+C</code>.</div>
+      <div class="cloze-hint">Wrap words to hide: <code>{{c1::word}}</code>. Use <code>{{c2::word}}</code> for a second blank. Select text + click <strong>+ cloze</strong> or <code>Cmd+Shift+C</code>. Select a phrase + click <strong>+ word cloze</strong> to cloze each word individually.</div>
       <div class="rich-toolbar">
         <button class="rich-btn" onclick="wrapSel('ec','**','**')" title="Cmd+B"><b>B</b></button>
         <button class="rich-btn" onclick="wrapSel('ec','_','_')" title="Cmd+I"><em>I</em></button>
@@ -460,6 +474,7 @@
         <button class="rich-btn" onclick="insertBulletBtn('ec')">• list</button>
         <button class="rich-btn" onclick="insertCodeBlockBtn('ec')">{ } block</button>
         <button class="rich-btn" onclick="insertClozeTag()">+ cloze</button>
+        <button class="rich-btn" onclick="insertWordCloze()" title="Cloze each word individually">+ word cloze</button>
       </div>
       <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." onkeydown="taKey(event,'ec')" style="min-height:200px;"></textarea>
     </div>
@@ -467,8 +482,13 @@
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
     <div class="editor-tags-row" id="editor-tags-row"></div>
     <div class="tag-input-row">
-      <input class="text-input" id="tag-input" type="text" placeholder="e.g. http, attacks, fundamentals..." style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addTagFromInput();}" />
+      <input class="text-input" id="tag-input" type="text" placeholder="e.g. http::security, attacks..." style="margin-bottom:0;"
+        oninput="tagInputChanged()"
+        onkeydown="tagInputKey(event)" 
+        onblur="setTimeout(hideTagAC, 150)" 
+        autocomplete="off" />
       <button class="btn-secondary" onclick="addTagFromInput()" type="button">Add</button>
+      <div class="tag-autocomplete" id="tag-autocomplete"></div>
     </div>
 
     <div class="modal-actions">
@@ -786,11 +806,49 @@ function setTagFilter(tag) {
   renderDeckMain();
 }
 
+// a card matches a filter if any of its tags starts with the filter prefix
+function tagMatches(cardTags, filter) {
+  if (!filter) return true;
+  return (cardTags || []).some(t => t === filter || t.startsWith(filter + '::'));
+}
+
 function getDeckTags(deckId) {
   const cards = state.cards.filter(c => c.deckId === deckId);
   const tagSet = new Set();
   cards.forEach(c => (c.tags || []).forEach(t => tagSet.add(t)));
   return [...tagSet].sort();
+}
+
+// Build a tag tree from a flat list of tags like ['http', 'http::headers', 'http::attacks', 'dns']
+function buildTagTree(tags) {
+  const roots = {};
+  tags.forEach(tag => {
+    const parts = tag.split('::');
+    let node = roots;
+    parts.forEach((part, i) => {
+      const prefix = parts.slice(0, i + 1).join('::');
+      if (!node[part]) node[part] = { fullTag: prefix, children: {} };
+      node = node[part].children;
+    });
+  });
+  return roots;
+}
+
+function renderTagTree(tree, allCards, depth) {
+  depth = depth || 0;
+  return Object.entries(tree).map(([key, node]) => {
+    const count = allCards.filter(c => tagMatches(c.tags, node.fullTag)).length;
+    const isActive = activeTagFilter === node.fullTag;
+    const hasChildren = Object.keys(node.children).length > 0;
+    const indent = depth > 0 ? `style="margin-left:${depth * 12}px;"` : '';
+    // show last segment only, prefix path as muted
+    const parts = node.fullTag.split('::');
+    const label = depth === 0
+      ? node.fullTag
+      : `<span style="color:var(--text-faint)">${parts.slice(0, -1).join('::') + '::'}</span>${parts[parts.length - 1]}`;
+    return `<span class="tag-pill${isActive ? ' active' : ''}" ${indent} onclick="setTagFilter('${esc(node.fullTag)}')" title="${esc(node.fullTag)}">${label} <span style="opacity:0.6">(${count})</span></span>`
+      + (hasChildren ? renderTagTree(node.children, allCards, depth + 1) : '');
+  }).join('');
 }
 
 function renderDeckMain() {
@@ -802,18 +860,20 @@ function renderDeckMain() {
   const main = document.getElementById('main-area');
   const tags = getDeckTags(activeDeckId);
 
-  // apply tag filter for display + review
-  const visibleCards = activeTagFilter ? allCards.filter(c => (c.tags || []).includes(activeTagFilter)) : allCards;
+  const visibleCards = activeTagFilter
+    ? allCards.filter(c => tagMatches(c.tags, activeTagFilter))
+    : allCards;
   const visibleDue = visibleCards.filter(c => c.due <= Date.now()).length;
 
   const tagFilterRow = tags.length > 0 ? `
     <div class="tag-filter-row">
       <span class="tag-pill all${!activeTagFilter ? ' active' : ''}" onclick="setTagFilter(null)">All (${allCards.length})</span>
-      ${tags.map(t => {
-        const count = allCards.filter(c => (c.tags || []).includes(t)).length;
-        return `<span class="tag-pill${activeTagFilter === t ? ' active' : ''}" onclick="setTagFilter('${esc(t)}')">${esc(t)} (${count})</span>`;
-      }).join('')}
+      ${renderTagTree(buildTagTree(tags), allCards, 0)}
     </div>` : '';
+
+  const filterLabel = activeTagFilter
+    ? ` · <span style="font-family:'Space Mono',monospace;color:var(--purple);font-size:11px;">${esc(activeTagFilter)}</span> (${visibleCards.length})`
+    : '';
 
   main.innerHTML = `
     <div class="main">
@@ -821,11 +881,11 @@ function renderDeckMain() {
         <div>
           ${folder ? `<div style="font-size:11px;color:var(--purple);font-family:Space Mono,monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">${esc(folder.name)}</div>` : ''}
           <div class="deck-title">${esc(deck.name)}</div>
-          <div class="deck-meta">${allCards.length} card${allCards.length !== 1 ? 's' : ''} · ${due} due${activeTagFilter ? ` · showing "${esc(activeTagFilter)}" (${visibleCards.length})` : ''}</div>
+          <div class="deck-meta">${allCards.length} card${allCards.length !== 1 ? 's' : ''} · ${due} due${filterLabel}</div>
         </div>
         <div class="deck-actions">
           ${visibleDue > 0 ? `<button class="btn-add" onclick="startReview(false)">Review ${visibleDue} due</button>` : ''}
-          ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="startReview(true)">Review all${activeTagFilter ? ' (' + activeTagFilter + ')' : ''}</button>` : ''}
+          ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="startReview(true)">Review all${activeTagFilter ? ' ↓' : ''}</button>` : ''}
           <button class="btn-secondary" onclick="openMoveDeckModal('${activeDeckId}')">Move / Rename</button>
           <button class="btn-secondary" onclick="deleteDeck('${activeDeckId}')">Delete</button>
         </div>
@@ -846,7 +906,13 @@ function cardRow(c) {
     : (c.front || '').slice(0,120);
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
-    ? `<div class="card-tags-row">${tags.map(t => `<span class="tag-pill" onclick="event.stopPropagation(); setTagFilter('${esc(t)}')">${esc(t)}</span>`).join('')}</div>`
+    ? `<div class="card-tags-row">${tags.map(t => {
+        const parts = t.split('::');
+        const label = parts.length > 1
+          ? `<span style="opacity:0.5">${parts.slice(0,-1).join('::') + '::'}</span>${parts[parts.length-1]}`
+          : t;
+        return `<span class="tag-pill" onclick="event.stopPropagation(); setTagFilter('${esc(t)}')" title="${esc(t)}">${label}</span>`;
+      }).join('')}</div>`
     : '';
   return `<div class="card-row" onclick="openCardEditor('${c.id}')" style="flex-direction:column;align-items:stretch;">
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%;">
@@ -1035,15 +1101,65 @@ function renderEditorTags() {
     `<span class="tag-pill removable" onclick="removeEditorTag('${esc(t)}')" title="Click to remove">${esc(t)}</span>`
   ).join('');
 }
+
+function getAllTags() {
+  const tagSet = new Set();
+  state.cards.forEach(c => (c.tags || []).forEach(t => tagSet.add(t)));
+  return [...tagSet].sort();
+}
+
+let tagACSelected = -1;
+
+function tagInputChanged() {
+  const input = document.getElementById('tag-input');
+  const query = input.value.trim().toLowerCase();
+  const ac = document.getElementById('tag-autocomplete');
+  if (!query) { hideTagAC(); return; }
+  const allTags = getAllTags();
+  const matches = allTags.filter(t => t.toLowerCase().includes(query) && !currentEditorTags.includes(t)).slice(0, 10);
+  if (matches.length === 0) { hideTagAC(); return; }
+  tagACSelected = -1;
+  ac.innerHTML = matches.map((t) => {
+    const idx = t.toLowerCase().indexOf(query);
+    const highlighted = esc(t.slice(0, idx)) + `<mark>${esc(t.slice(idx, idx + query.length))}</mark>` + esc(t.slice(idx + query.length));
+    return `<div class="tag-ac-item" data-tag="${esc(t)}" onmousedown="selectTagAC('${esc(t)}')">${highlighted}</div>`;
+  }).join('');
+  ac.classList.add('show');
+}
+
+function tagInputKey(e) {
+  const ac = document.getElementById('tag-autocomplete');
+  const items = ac.querySelectorAll('.tag-ac-item');
+  if (e.key === 'ArrowDown') { e.preventDefault(); tagACSelected = Math.min(tagACSelected + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('selected', i === tagACSelected)); return; }
+  if (e.key === 'ArrowUp') { e.preventDefault(); tagACSelected = Math.max(tagACSelected - 1, -1); items.forEach((el, i) => el.classList.toggle('selected', i === tagACSelected)); return; }
+  if (e.key === 'Enter') { e.preventDefault(); if (tagACSelected >= 0 && items[tagACSelected]) { selectTagAC(items[tagACSelected].dataset.tag); } else { addTagFromInput(); } return; }
+  if (e.key === 'Escape') { hideTagAC(); return; }
+  if (e.key === 'Tab') { e.preventDefault(); if (items.length > 0) { selectTagAC(items[tagACSelected >= 0 ? tagACSelected : 0].dataset.tag); } return; }
+}
+
+function selectTagAC(tag) {
+  if (!currentEditorTags.includes(tag)) currentEditorTags.push(tag);
+  document.getElementById('tag-input').value = '';
+  hideTagAC(); renderEditorTags();
+  document.getElementById('tag-input').focus();
+}
+
+function hideTagAC() {
+  const ac = document.getElementById('tag-autocomplete');
+  if (ac) { ac.classList.remove('show'); tagACSelected = -1; }
+}
+
 function addTagFromInput() {
   const input = document.getElementById('tag-input');
   const raw = input.value.trim().toLowerCase();
+  hideTagAC();
   if (!raw) return;
   raw.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
     if (!currentEditorTags.includes(t)) currentEditorTags.push(t);
   });
   input.value = ''; renderEditorTags(); input.focus();
 }
+
 function removeEditorTag(tag) {
   currentEditorTags = currentEditorTags.filter(t => t !== tag);
   renderEditorTags();
@@ -1187,6 +1303,35 @@ function insertClozeTag() {
   el.focus();
 }
 
+function insertWordCloze() {
+  const el = document.getElementById('ec');
+  const scrollTop = el.scrollTop;
+  const s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.slice(s, e);
+  if (!sel.trim()) { el.focus(); return; }
+
+  // tokenize: split into word tokens and non-word tokens (spaces, punctuation)
+  // each word gets its own cloze, punctuation/spaces pass through unchanged
+  const tokens = sel.split(/(\s+|[.,;:!?\-–—()[\]{}"'\/\\|])/);
+  let replacement = '';
+  for (const token of tokens) {
+    if (!token) continue;
+    // a "word" = contains at least one letter or digit
+    if (/[a-zA-Z0-9\u0600-\u06FF]/.test(token)) {
+      replacement += `{{c${clozeN}::${token}}}`;
+      clozeN++;
+    } else {
+      replacement += token;
+    }
+  }
+
+  el.value = el.value.slice(0, s) + replacement + el.value.slice(e);
+  el.selectionStart = s;
+  el.selectionEnd = s + replacement.length;
+  el.scrollTop = scrollTop;
+  el.focus();
+}
+
 function taKey(e, id) {
   const el = document.getElementById(id);
   const isMac = navigator.platform.toUpperCase().includes('MAC');
@@ -1276,25 +1421,7 @@ function setCardType(t) {
   document.getElementById('cloze-fields').style.display = t === 'cloze' ? 'block' : 'none';
 }
 
-function renderEditorTags() {
-  const row = document.getElementById('editor-tags-row');
-  row.innerHTML = currentEditorTags.map(t =>
-    `<span class="tag-pill removable" onclick="removeEditorTag('${esc(t)}')" title="Click to remove">${esc(t)}</span>`
-  ).join('');
-}
-function addTagFromInput() {
-  const input = document.getElementById('tag-input');
-  const raw = input.value.trim().toLowerCase();
-  if (!raw) return;
-  raw.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
-    if (!currentEditorTags.includes(t)) currentEditorTags.push(t);
-  });
-  input.value = ''; renderEditorTags(); input.focus();
-}
-function removeEditorTag(tag) {
-  currentEditorTags = currentEditorTags.filter(t => t !== tag);
-  renderEditorTags();
-}
+
 
 function saveCard() {
   if (!activeDeckId) { closeCardEditor(); return; }
@@ -1356,7 +1483,7 @@ function deleteCard(id) {
 // ─── REVIEW ───────────────────────────────────────────────────────────────────
 function startReview(all) {
   let pool = state.cards.filter(c => c.deckId === activeDeckId);
-  if (activeTagFilter) pool = pool.filter(c => (c.tags || []).includes(activeTagFilter));
+  if (activeTagFilter) pool = pool.filter(c => tagMatches(c.tags, activeTagFilter));
   pool = pool.filter(c => all || c.due <= Date.now());
   revQueue = [...pool];
   for (let i = revQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [revQueue[i],revQueue[j]]=[revQueue[j],revQueue[i]]; }
