@@ -681,17 +681,26 @@ function toggleCode(id) {
 }
 
 function applyInline(html) {
+  // extract URLs first so underscores in them don't get italicised
+  const urlTokens = [];
+  // named links [label](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (_, label, url) => {
+    const i = urlTokens.length;
+    urlTokens.push(`<a class="ext-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    return `\x03URL${i}\x03`;
+  });
+  // bare URLs
+  html = html.replace(/(^|[\s>(])((https?:\/\/)[^\s<)"]+)/g, (_, pre, url) => {
+    const i = urlTokens.length;
+    urlTokens.push(`<a class="ext-link" href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+    return pre + `\x03URL${i}\x03`;
+  });
+  // now safe to apply markdown — no URLs left to interfere
   html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   html = html.replace(/_(.+?)_/g, '<em>$1</em>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // external links [label](url)
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (_, label, url) => {
-    return `<a class="ext-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-  });
-  // bare URLs
-  html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, (_, pre, url) => {
-    return `${pre}<a class="ext-link" href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-  });
+  // restore URLs
+  html = html.replace(/\x03URL(\d+)\x03/g, (_, i) => urlTokens[+i]);
   return html;
 }
 
