@@ -1192,33 +1192,6 @@ function deleteDeck(id) {
   save(); renderSidebar();
   document.getElementById('main-area').innerHTML = '<div class="no-deck"><div class="no-deck-title">Deck deleted</div></div>';
 }
-function openCardEditor(cardId) {
-  editingCardId = cardId || null;
-  clozeN = 1;
-  if (cardId) {
-    const c = state.cards.find(x => x.id === cardId);
-    document.getElementById('card-modal-title').textContent = 'Edit card';
-    setCardType(c.type);
-    if (c.type === 'basic') {
-      document.getElementById('ef').value = c.front || '';
-      document.getElementById('eb').value = c.back || '';
-    } else {
-      document.getElementById('ec').value = c.clozeText || '';
-    }
-    currentEditorTags = [...(c.tags || [])];
-  } else {
-    document.getElementById('card-modal-title').textContent = 'New card';
-    setCardType('basic');
-    document.getElementById('ef').value = '';
-    document.getElementById('eb').value = '';
-    document.getElementById('ec').value = '';
-    currentEditorTags = [];
-  }
-  renderEditorTags();
-  updatePreviews();
-  document.getElementById('card-overlay').classList.add('open');
-  setTimeout(() => document.getElementById(cardType === 'cloze' ? 'ec' : 'ef').focus(), 50);
-}
 function closeCardEditor() {
   document.getElementById('card-overlay').classList.remove('open');
   editingCardId = null;
@@ -1231,11 +1204,12 @@ function closeCardEditor() {
 
 function setCardType(t) {
   cardType = t;
-  document.getElementById('etype-basic').classList.toggle('active', t === 'basic');
-  document.getElementById('etype-cloze').classList.toggle('active', t === 'cloze');
-  document.getElementById('basic-fields').style.display = t === 'basic' ? 'block' : 'none';
-  document.getElementById('cloze-fields').style.display = t === 'cloze' ? 'block' : 'none';
-  updatePreviews();
+  ['basic','cloze','code'].forEach(x => {
+    const btn = document.getElementById('etype-' + x);
+    const fields = document.getElementById(x + '-fields');
+    if (btn) btn.classList.toggle('active', x === t);
+    if (fields) fields.style.display = x === t ? 'block' : 'none';
+  });
 }
 
 function openCardEditor(cardId) {
@@ -1270,25 +1244,6 @@ function openCardEditor(cardId) {
   document.getElementById('card-overlay').classList.add('open');
   const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
-}
-
-function closeCardEditor() {
-  document.getElementById('card-overlay').classList.remove('open');
-  editingCardId = null;
-  if (resumeReviewAfterEdit) {
-    resumeReviewAfterEdit = false;
-    renderRevCard();
-  }
-}
-
-function setCardType(t) {
-  cardType = t;
-  ['basic','cloze','code'].forEach(x => {
-    const btn = document.getElementById('etype-' + x);
-    const fields = document.getElementById(x + '-fields');
-    if (btn) btn.classList.toggle('active', x === t);
-    if (fields) fields.style.display = x === t ? 'block' : 'none';
-  });
 }
 
 function renderEditorTags() {
@@ -1638,68 +1593,6 @@ function taKey(e, id) {
 }
 
 function setupCEKeydown() {} // no-op, taKey handles everything via onkeydown
-
-function closeCardEditor() {
-  document.getElementById('card-overlay').classList.remove('open');
-  editingCardId = null;
-  if (resumeReviewAfterEdit) {
-    resumeReviewAfterEdit = false;
-    renderRevCard();
-  }
-}
-
-function setCardType(t) {
-  cardType = t;
-  ['basic','cloze','code'].forEach(x => {
-    const btn = document.getElementById('etype-' + x);
-    const fields = document.getElementById(x + '-fields');
-    if (btn) btn.classList.toggle('active', x === t);
-    if (fields) fields.style.display = x === t ? 'block' : 'none';
-  });
-}
-
-
-
-function saveCard() {
-  if (!activeDeckId) { closeCardEditor(); return; }
-  if (cardType === 'basic') {
-    const front = document.getElementById('ef').value.trim();
-    const back = document.getElementById('eb').value.trim();
-    const ef = document.getElementById('ef'), eb = document.getElementById('eb');
-    ef.style.borderColor = front ? '' : 'var(--red)';
-    eb.style.borderColor = back ? '' : 'var(--red)';
-    if (!front || !back) return;
-    if (editingCardId) {
-      const c = state.cards.find(x => x.id === editingCardId);
-      if (c) { c.front = front; c.back = back; c.type = 'basic'; c.tags = [...currentEditorTags]; }
-    } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'basic', front, back, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
-    }
-  } else {
-    const ct = document.getElementById('ec').value.trim();
-    const ec = document.getElementById('ec');
-    ec.style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
-    if (!ct || !ct.includes('{{c')) return;
-    if (editingCardId) {
-      const c = state.cards.find(x => x.id === editingCardId);
-      if (c) { c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags]; }
-    } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
-    }
-  }
-  save();
-  const wasInReview = resumeReviewAfterEdit;
-  resumeReviewAfterEdit = false;
-  closeCardEditor();
-  if (wasInReview) {
-    const updatedCard = state.cards.find(c => c.id === revQueue[revIdx]?.id);
-    if (updatedCard) revQueue[revIdx] = updatedCard;
-    renderRevCard();
-  } else {
-    renderDeckMain();
-    renderSidebar();
-  }
-}
 
 function resetCard(id) {
   const c = state.cards.find(x => x.id === id);
