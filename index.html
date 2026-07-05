@@ -1192,26 +1192,6 @@ function deleteDeck(id) {
   save(); renderSidebar();
   document.getElementById('main-area').innerHTML = '<div class="no-deck"><div class="no-deck-title">Deck deleted</div></div>';
 }
-function closeCardEditor() {
-  document.getElementById('card-overlay').classList.remove('open');
-  editingCardId = null;
-  // if cancelled mid-review (not saved), resume the session
-  if (resumeReviewAfterEdit) {
-    resumeReviewAfterEdit = false;
-    renderRevCard();
-  }
-}
-
-function setCardType(t) {
-  cardType = t;
-  ['basic','cloze','code'].forEach(x => {
-    const btn = document.getElementById('etype-' + x);
-    const fields = document.getElementById(x + '-fields');
-    if (btn) btn.classList.toggle('active', x === t);
-    if (fields) fields.style.display = x === t ? 'block' : 'none';
-  });
-}
-
 function openCardEditor(cardId) {
   editingCardId = cardId || null;
   clozeN = 1;
@@ -1244,6 +1224,25 @@ function openCardEditor(cardId) {
   document.getElementById('card-overlay').classList.add('open');
   const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
+}
+
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
+
+function setCardType(t) {
+  cardType = t;
+  ['basic','cloze','code'].forEach(x => {
+    const btn = document.getElementById('etype-' + x);
+    const fields = document.getElementById(x + '-fields');
+    if (btn) btn.classList.toggle('active', x === t);
+    if (fields) fields.style.display = x === t ? 'block' : 'none';
+  });
 }
 
 function renderEditorTags() {
@@ -1593,6 +1592,8 @@ function taKey(e, id) {
 }
 
 function setupCEKeydown() {} // no-op, taKey handles everything via onkeydown
+
+
 
 function resetCard(id) {
   const c = state.cards.find(x => x.id === id);
@@ -2372,10 +2373,6 @@ function renderCodeRev(main, card, pct) {
         <div class="code-line-list" id="code-line-list"></div>
       </div>
       <div class="code-recall-stats" id="code-recall-stats"></div>
-      <div class="input-row" id="code-input-row">
-        <input class="recall-input" id="code-line-input" type="text" placeholder="type this line..." autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'Space Mono',monospace;font-size:13px;" />
-        <button class="btn-check" onclick="checkCodeLine()">Check</button>
-      </div>
       <div class="feedback-row" style="margin-top:8px;">
         <span class="feedback" id="code-feedback"></span>
       </div>
@@ -2384,16 +2381,21 @@ function renderCodeRev(main, card, pct) {
   </div>`;
 
   renderCodeLines();
+  focusCodeLineInput();
+}
+
+function focusCodeLineInput() {
   setTimeout(() => {
     const inp = document.getElementById('code-line-input');
     if (inp) {
       inp.focus();
+      const v = inp.value; inp.value = ''; inp.value = v; // put cursor at end
       inp.onkeydown = e => {
         if (e.key === 'Enter') { e.preventDefault(); checkCodeLine(); }
         if (e.key === 'Tab') { e.preventDefault(); const s = inp.selectionStart; inp.value = inp.value.slice(0,s) + '    ' + inp.value.slice(s); inp.selectionStart = inp.selectionEnd = s + 4; }
       };
     }
-  }, 50);
+  }, 30);
 }
 
 function renderCodeLines() {
@@ -2422,12 +2424,12 @@ function renderCodeLines() {
         </div>`;
       }
     } else if (i === codeLineIdx) {
-      // current line
+      // current line — type directly into the code block itself
       const indent = line.match(/^(\s*)/)?.[1] || '';
       html += `<div class="code-line" id="current-code-line">
         <div class="code-line-num">${lineNum}</div>
-        <div class="code-line-content">
-          <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-faint);white-space:pre;">${esc(indent)}</span><span id="code-cursor" style="display:inline-block;width:8px;height:14px;background:var(--accent);vertical-align:middle;animation:pulse 1s infinite;margin-left:1px;"></span>
+        <div class="code-line-content" style="display:flex;align-items:baseline;">
+          <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-faint);white-space:pre;flex-shrink:0;">${esc(indent)}</span><input type="text" id="code-line-input" class="code-line-input" style="flex:1;min-width:20px;width:auto;" autocomplete="off" autocorrect="off" spellcheck="false" />
         </div>
       </div>`;
     } else {
@@ -2491,16 +2493,12 @@ function checkCodeLine() {
     finishCodeRev();
   } else {
     renderCodeLines();
-    inp.focus();
+    focusCodeLineInput();
   }
 }
 
 function finishCodeRev() {
-  const inp = document.getElementById('code-line-input');
-  const inputRow = document.getElementById('code-input-row');
   const fb = document.getElementById('code-feedback');
-  if (inp) inp.disabled = true;
-  if (inputRow) inputRow.style.display = 'none';
 
   const nonBlankLines = codeLines.filter(l => l.trim() !== '').length;
   const acc = nonBlankLines > 0 ? Math.round(codeCorrect / nonBlankLines * 100) : 100;
