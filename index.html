@@ -1202,6 +1202,52 @@ function openCardEditor(cardId) {
     if (c.type === 'basic') {
       document.getElementById('ef').value = c.front || '';
       document.getElementById('eb').value = c.back || '';
+    } else {
+      document.getElementById('ec').value = c.clozeText || '';
+    }
+    currentEditorTags = [...(c.tags || [])];
+  } else {
+    document.getElementById('card-modal-title').textContent = 'New card';
+    setCardType('basic');
+    document.getElementById('ef').value = '';
+    document.getElementById('eb').value = '';
+    document.getElementById('ec').value = '';
+    currentEditorTags = [];
+  }
+  renderEditorTags();
+  updatePreviews();
+  document.getElementById('card-overlay').classList.add('open');
+  setTimeout(() => document.getElementById(cardType === 'cloze' ? 'ec' : 'ef').focus(), 50);
+}
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  // if cancelled mid-review (not saved), resume the session
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
+
+function setCardType(t) {
+  cardType = t;
+  document.getElementById('etype-basic').classList.toggle('active', t === 'basic');
+  document.getElementById('etype-cloze').classList.toggle('active', t === 'cloze');
+  document.getElementById('basic-fields').style.display = t === 'basic' ? 'block' : 'none';
+  document.getElementById('cloze-fields').style.display = t === 'cloze' ? 'block' : 'none';
+  updatePreviews();
+}
+
+function openCardEditor(cardId) {
+  editingCardId = cardId || null;
+  clozeN = 1;
+  if (cardId) {
+    const c = state.cards.find(x => x.id === cardId);
+    document.getElementById('card-modal-title').textContent = 'Edit card';
+    setCardType(c.type);
+    if (c.type === 'basic') {
+      document.getElementById('ef').value = c.front || '';
+      document.getElementById('eb').value = c.back || '';
     } else if (c.type === 'code') {
       document.getElementById('ecode-prompt').value = c.codePrompt || '';
       document.getElementById('ecode-answer').value = c.codeAnswer || '';
@@ -1593,7 +1639,67 @@ function taKey(e, id) {
 
 function setupCEKeydown() {} // no-op, taKey handles everything via onkeydown
 
+function closeCardEditor() {
+  document.getElementById('card-overlay').classList.remove('open');
+  editingCardId = null;
+  if (resumeReviewAfterEdit) {
+    resumeReviewAfterEdit = false;
+    renderRevCard();
+  }
+}
 
+function setCardType(t) {
+  cardType = t;
+  ['basic','cloze','code'].forEach(x => {
+    const btn = document.getElementById('etype-' + x);
+    const fields = document.getElementById(x + '-fields');
+    if (btn) btn.classList.toggle('active', x === t);
+    if (fields) fields.style.display = x === t ? 'block' : 'none';
+  });
+}
+
+
+
+function saveCard() {
+  if (!activeDeckId) { closeCardEditor(); return; }
+  if (cardType === 'basic') {
+    const front = document.getElementById('ef').value.trim();
+    const back = document.getElementById('eb').value.trim();
+    const ef = document.getElementById('ef'), eb = document.getElementById('eb');
+    ef.style.borderColor = front ? '' : 'var(--red)';
+    eb.style.borderColor = back ? '' : 'var(--red)';
+    if (!front || !back) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.front = front; c.back = back; c.type = 'basic'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'basic', front, back, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else {
+    const ct = document.getElementById('ec').value.trim();
+    const ec = document.getElementById('ec');
+    ec.style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
+    if (!ct || !ct.includes('{{c')) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  }
+  save();
+  const wasInReview = resumeReviewAfterEdit;
+  resumeReviewAfterEdit = false;
+  closeCardEditor();
+  if (wasInReview) {
+    const updatedCard = state.cards.find(c => c.id === revQueue[revIdx]?.id);
+    if (updatedCard) revQueue[revIdx] = updatedCard;
+    renderRevCard();
+  } else {
+    renderDeckMain();
+    renderSidebar();
+  }
+}
 
 function resetCard(id) {
   const c = state.cards.find(x => x.id === id);
@@ -2373,6 +2479,10 @@ function renderCodeRev(main, card, pct) {
         <div class="code-line-list" id="code-line-list"></div>
       </div>
       <div class="code-recall-stats" id="code-recall-stats"></div>
+      <div class="input-row" id="code-input-row">
+        <input class="recall-input" id="code-line-input" type="text" placeholder="type this line..." autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'Space Mono',monospace;font-size:13px;" />
+        <button class="btn-check" onclick="checkCodeLine()">Check</button>
+      </div>
       <div class="feedback-row" style="margin-top:8px;">
         <span class="feedback" id="code-feedback"></span>
       </div>
@@ -2381,21 +2491,16 @@ function renderCodeRev(main, card, pct) {
   </div>`;
 
   renderCodeLines();
-  focusCodeLineInput();
-}
-
-function focusCodeLineInput() {
   setTimeout(() => {
     const inp = document.getElementById('code-line-input');
     if (inp) {
       inp.focus();
-      const v = inp.value; inp.value = ''; inp.value = v; // put cursor at end
       inp.onkeydown = e => {
         if (e.key === 'Enter') { e.preventDefault(); checkCodeLine(); }
         if (e.key === 'Tab') { e.preventDefault(); const s = inp.selectionStart; inp.value = inp.value.slice(0,s) + '    ' + inp.value.slice(s); inp.selectionStart = inp.selectionEnd = s + 4; }
       };
     }
-  }, 30);
+  }, 50);
 }
 
 function renderCodeLines() {
@@ -2424,12 +2529,12 @@ function renderCodeLines() {
         </div>`;
       }
     } else if (i === codeLineIdx) {
-      // current line — type directly into the code block itself
+      // current line
       const indent = line.match(/^(\s*)/)?.[1] || '';
       html += `<div class="code-line" id="current-code-line">
         <div class="code-line-num">${lineNum}</div>
-        <div class="code-line-content" style="display:flex;align-items:baseline;">
-          <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-faint);white-space:pre;flex-shrink:0;">${esc(indent)}</span><input type="text" id="code-line-input" class="code-line-input" style="flex:1;min-width:20px;width:auto;" autocomplete="off" autocorrect="off" spellcheck="false" />
+        <div class="code-line-content">
+          <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-faint);white-space:pre;">${esc(indent)}</span><span id="code-cursor" style="display:inline-block;width:8px;height:14px;background:var(--accent);vertical-align:middle;animation:pulse 1s infinite;margin-left:1px;"></span>
         </div>
       </div>`;
     } else {
@@ -2493,12 +2598,16 @@ function checkCodeLine() {
     finishCodeRev();
   } else {
     renderCodeLines();
-    focusCodeLineInput();
+    inp.focus();
   }
 }
 
 function finishCodeRev() {
+  const inp = document.getElementById('code-line-input');
+  const inputRow = document.getElementById('code-input-row');
   const fb = document.getElementById('code-feedback');
+  if (inp) inp.disabled = true;
+  if (inputRow) inputRow.style.display = 'none';
 
   const nonBlankLines = codeLines.filter(l => l.trim() !== '').length;
   const acc = nonBlankLines > 0 ? Math.round(codeCorrect / nonBlankLines * 100) : 100;
