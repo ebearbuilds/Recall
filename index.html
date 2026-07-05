@@ -567,7 +567,7 @@
       </select>
       <div class="field-label">Answer (the code to recall)</div>
       <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">Write the exact code. During review you'll type it line by line and get token-level feedback.</div>
-      <textarea class="editor-ta" id="ecode-answer" placeholder="def fibonacci(n):&#10;    if n <= 1:&#10;        return n&#10;    return fibonacci(n-1) + fibonacci(n-2)" style="min-height:200px;font-family:'Space Mono',monospace;font-size:13px;line-height:1.65;" spellcheck="false"></textarea>
+      <textarea class="editor-ta" id="ecode-answer" placeholder="def fibonacci(n):&#10;    if n <= 1:&#10;        return n&#10;    return fibonacci(n-1) + fibonacci(n-2)" style="min-height:200px;font-family:'Space Mono',monospace;font-size:13px;line-height:1.65;" spellcheck="false" onkeydown="codeAnswerKey(event)"></textarea>
     </div>
 
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
@@ -1593,6 +1593,64 @@ function taKey(e, id) {
 
 function setupCEKeydown() {} // no-op, taKey handles everything via onkeydown
 
+// Tab/Shift+Tab indent handling for the Code Recall "answer" textarea (real code editing, not markdown bullets)
+function codeAnswerKey(e) {
+  const el = e.target;
+
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = el.selectionStart, en = el.selectionEnd;
+    if (s === en) {
+      // no selection — just insert 4 spaces at cursor
+      el.value = el.value.slice(0, s) + '    ' + el.value.slice(en);
+      el.selectionStart = el.selectionEnd = s + 4;
+    } else {
+      // selection spans one or more lines — indent/dedent every line touched
+      const lineStart = el.value.lastIndexOf('\n', s - 1) + 1;
+      let lineEnd = el.value.indexOf('\n', en);
+      if (lineEnd === -1) lineEnd = el.value.length;
+      const block = el.value.slice(lineStart, lineEnd);
+      const lines = block.split('\n');
+      let firstLineDelta = 0;
+      const newLines = lines.map((line, i) => {
+        if (e.shiftKey) {
+          if (line.startsWith('    ')) { if (i === 0) firstLineDelta = -4; return line.slice(4); }
+          if (line.startsWith('\t')) { if (i === 0) firstLineDelta = -1; return line.slice(1); }
+          const leading = line.match(/^ +/);
+          if (leading) { const cut = Math.min(leading[0].length, 4); if (i === 0) firstLineDelta = -cut; return line.slice(cut); }
+          return line;
+        } else {
+          if (i === 0) firstLineDelta = 4;
+          return '    ' + line;
+        }
+      });
+      const newBlock = newLines.join('\n');
+      el.value = el.value.slice(0, lineStart) + newBlock + el.value.slice(lineEnd);
+      el.selectionStart = Math.max(lineStart, s + firstLineDelta);
+      el.selectionEnd = lineEnd + (newBlock.length - block.length);
+    }
+    return;
+  }
+
+  // Enter: auto-continue the current line's indentation (and add one level after a trailing ':')
+  if (e.key === 'Enter') {
+    const s = el.selectionStart;
+    if (s !== el.selectionEnd) return; // let default handle replacing a selection
+    const beforeCursor = el.value.slice(0, s);
+    const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    const line = beforeCursor.slice(lineStart);
+    const indentMatch = line.match(/^(\s*)/);
+    let indent = indentMatch ? indentMatch[1] : '';
+    if (/:\s*$/.test(line)) indent += '    '; // e.g. after "def foo():" or "if x:"
+    if (indent) {
+      e.preventDefault();
+      const insert = '\n' + indent;
+      el.value = el.value.slice(0, s) + insert + el.value.slice(s);
+      el.selectionStart = el.selectionEnd = s + insert.length;
+    }
+  }
+}
+
 
 
 function resetCard(id) {
@@ -2433,10 +2491,10 @@ function renderCodeLines() {
         </div>
       </div>`;
     } else {
-      // upcoming
+      // upcoming — hidden, just reserve the line's height so layout doesn't jump
       html += `<div class="code-line">
         <div class="code-line-num" style="opacity:0.3">${lineNum}</div>
-        <div class="code-line-content"><div class="code-line-upcoming">${esc(line) || ' '}</div></div>
+        <div class="code-line-content"><div class="code-line-upcoming">&nbsp;</div></div>
       </div>`;
     }
   });
