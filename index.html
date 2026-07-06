@@ -176,6 +176,18 @@
   .code-line-done.mismatch::after { content: attr(data-expected); display: block; color: var(--green); text-decoration: none; font-size: 12px; opacity: 0.8; }
   .code-line-input { width: 100%; background: rgba(255,255,255,0.05); border: none; border-bottom: 2px solid var(--accent); color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 3px 6px; outline: none; }
   .code-line-input::placeholder { color: var(--text-faint); font-style: italic; }
+  .code-full-editor { width: 100%; min-height: 260px; background: #111; border: none; color: #c9d1d9; font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 14px 16px; outline: none; resize: vertical; white-space: pre; tab-size: 4; }
+  .code-full-editor::placeholder { color: var(--text-faint); font-style: italic; }
+  .code-full-editor:disabled { opacity: 0.6; }
+  /* live syntax-highlighted code editors — a colored overlay sits behind a transparent textarea */
+  .code-highlight-wrap { position: relative; border: 1px solid var(--border); border-radius: 2px; background: rgba(255,255,255,0.04); margin-bottom: 16px; }
+  .code-highlight-wrap.dark { background: #111; border: none; border-radius: 4px; margin-bottom: 0; overflow: hidden; }
+  .code-highlight-overlay { position: absolute; inset: 0; margin: 0; padding: 12px 14px; font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; white-space: pre; overflow: auto; pointer-events: none; color: var(--text); z-index: 1; }
+  .code-highlight-overlay.lg { padding: 14px 16px; color: #c9d1d9; }
+  .code-highlight-ta { position: relative; z-index: 2; display: block; width: 100%; min-height: 200px; background: transparent; border: none; color: transparent; caret-color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 12px 14px; outline: none; resize: none; }
+  .code-highlight-ta.lg { min-height: 260px; padding: 14px 16px; caret-color: #c9d1d9; }
+  .code-highlight-ta:disabled { opacity: 1; }
+  .code-highlight-ta::placeholder { color: var(--text-faint); font-style: italic; }
   .code-line-upcoming { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-faint); padding: 3px 6px; opacity: 0.35; white-space: pre; }
   .code-recall-stats { display: flex; gap: 20px; margin-bottom: 14px; }
   .cr-stat { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-muted); }
@@ -251,14 +263,40 @@
   .code-block pre { margin: 0; padding: 14px 16px; overflow-x: auto; }
   .code-block code { font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; color: #c9d1d9; background: none; padding: 0; }
   /* python syntax colors */
-  .py-kw { color: #ff7b72; }
-  .py-str { color: #a5d6ff; }
-  .py-comment { color: #6e7681; font-style: italic; }
-  .py-fn { color: #d2a8ff; }
-  .py-class { color: #ffa657; }
-  .py-builtin { color: #79c0ff; }
-  .py-num { color: #f0883e; }
-  .py-dec { color: #ffa657; }
+  .py-kw { color: var(--py-kw); }
+  .py-str { color: var(--py-str); }
+  .py-comment { color: var(--py-comment); font-style: italic; }
+  .py-fn { color: var(--py-fn); }
+  .py-class { color: var(--py-class); }
+  .py-builtin { color: var(--py-builtin); }
+  .py-num { color: var(--py-num); }
+  .py-dec { color: var(--py-dec); }
+
+  /* code syntax theme palettes — default is a GitHub Dark–style palette */
+  :root {
+    --py-kw: #ff7b72; --py-str: #a5d6ff; --py-comment: #6e7681; --py-fn: #d2a8ff;
+    --py-class: #ffa657; --py-builtin: #79c0ff; --py-num: #f0883e; --py-dec: #ffa657;
+  }
+  body.theme-dracula {
+    --py-kw: #ff79c6; --py-str: #f1fa8c; --py-comment: #6272a4; --py-fn: #50fa7b;
+    --py-class: #8be9fd; --py-builtin: #8be9fd; --py-num: #bd93f9; --py-dec: #ff79c6;
+  }
+  body.theme-monokai {
+    --py-kw: #f92672; --py-str: #e6db74; --py-comment: #75715e; --py-fn: #a6e22e;
+    --py-class: #a6e22e; --py-builtin: #66d9ef; --py-num: #ae81ff; --py-dec: #a6e22e;
+  }
+  body.theme-nord {
+    --py-kw: #81a1c1; --py-str: #a3be8c; --py-comment: #616e88; --py-fn: #88c0d0;
+    --py-class: #8fbcbb; --py-builtin: #81a1c1; --py-num: #b48ead; --py-dec: #d08770;
+  }
+  body.theme-onedark {
+    --py-kw: #c678dd; --py-str: #98c379; --py-comment: #5c6370; --py-fn: #61afef;
+    --py-class: #e5c07b; --py-builtin: #56b6c2; --py-num: #d19a66; --py-dec: #e5c07b;
+  }
+  body.theme-solarized {
+    --py-kw: #268bd2; --py-str: #2aa198; --py-comment: #586e75; --py-fn: #b58900;
+    --py-class: #cb4b16; --py-builtin: #6c71c4; --py-num: #d33682; --py-dec: #cb4b16;
+  }
 
   /* REVIEW */
   .review-wrap { padding: 40px 40px; max-width: 900px; }
@@ -471,6 +509,14 @@
       <span class="focus-dot"></span>
       <span id="focus-nav-label">Focus</span>
     </button>
+    <select id="code-theme-select" class="text-input" style="width:auto;margin-bottom:0;padding:6px 10px;font-size:12px;cursor:pointer;" onchange="setCodeTheme(this.value)" title="Code syntax theme">
+      <option value="github">GitHub Dark</option>
+      <option value="dracula">Dracula</option>
+      <option value="monokai">Monokai</option>
+      <option value="nord">Nord</option>
+      <option value="onedark">One Dark</option>
+      <option value="solarized">Solarized Dark</option>
+    </select>
     <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="openFocusStats()">Sessions</button>
     <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="exportData()">Export</button>
     <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="document.getElementById('import-input').click()">Import</button>
@@ -558,7 +604,7 @@
       <div class="field-label">Prompt</div>
       <textarea class="editor-ta" id="ecode-prompt" placeholder="e.g. Write a Python function that returns the nth Fibonacci number..." onkeydown="taKey(event,'ecode-prompt')" style="min-height:80px;"></textarea>
       <div class="field-label">Language</div>
-      <select class="text-input" id="ecode-lang" style="margin-bottom:16px;cursor:pointer;">
+      <select class="text-input" id="ecode-lang" style="margin-bottom:16px;cursor:pointer;" onchange="refreshCodeAnswerHighlight()">
         <option value="python">Python</option>
         <option value="javascript">JavaScript</option>
         <option value="sql">SQL</option>
@@ -566,8 +612,11 @@
         <option value="other">Other</option>
       </select>
       <div class="field-label">Answer (the code to recall)</div>
-      <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">Write the exact code. During review you'll type it line by line and get token-level feedback.</div>
-      <textarea class="editor-ta" id="ecode-answer" placeholder="def fibonacci(n):&#10;    if n <= 1:&#10;        return n&#10;    return fibonacci(n-1) + fibonacci(n-2)" style="min-height:200px;font-family:'Space Mono',monospace;font-size:13px;line-height:1.65;" spellcheck="false" onkeydown="codeAnswerKey(event)"></textarea>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">Write the exact code. During review you'll type the full solution and get a line-by-line accuracy check.</div>
+      <div class="code-highlight-wrap">
+        <div id="ecode-answer-highlight" class="code-highlight-overlay"></div>
+        <textarea class="code-highlight-ta" id="ecode-answer" placeholder="def fibonacci(n):&#10;    if n <= 1:&#10;        return n&#10;    return fibonacci(n-1) + fibonacci(n-2)" spellcheck="false" onkeydown="codeAnswerKey(event)"></textarea>
+      </div>
     </div>
 
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
@@ -794,6 +843,51 @@ function highlightPython(raw) {
   out = out.replace(/(<span class="py-kw">class<\/span>\s+)([A-Za-z_]\w*)/g,
     (_, kw, name) => kw + `<span class="py-class">${name}</span>`);
   return out;
+}
+
+// ─── LIVE SYNTAX HIGHLIGHT (overlay behind a transparent textarea) ────────────
+function highlightForLang(raw, lang) {
+  const l = (lang || 'python').toLowerCase();
+  if (l === 'python' || l === 'py') return highlightPython(raw);
+  return esc(raw);
+}
+
+function syncHighlightOverlay(taId, ovId, lang) {
+  const ta = document.getElementById(taId);
+  const ov = document.getElementById(ovId);
+  if (!ta || !ov) return;
+  // trailing space keeps the last empty line from collapsing
+  ov.innerHTML = highlightForLang(ta.value, lang) + ' ';
+  ov.scrollTop = ta.scrollTop;
+  ov.scrollLeft = ta.scrollLeft;
+}
+
+function attachHighlightSync(taId, ovId, getLang) {
+  const ta = document.getElementById(taId);
+  if (!ta) return;
+  const lang = () => (typeof getLang === 'function' ? getLang() : getLang);
+  const update = () => syncHighlightOverlay(taId, ovId, lang());
+  ta.oninput = update;
+  ta.onscroll = () => { const ov = document.getElementById(ovId); if (ov) { ov.scrollTop = ta.scrollTop; ov.scrollLeft = ta.scrollLeft; } };
+  update();
+}
+
+function refreshCodeAnswerHighlight() {
+  syncHighlightOverlay('ecode-answer', 'ecode-answer-highlight', document.getElementById('ecode-lang').value);
+}
+
+// ─── CODE SYNTAX THEME ─────────────────────────────────────────────────────────
+const CODE_THEME_KEY = 'recall_code_theme';
+function setCodeTheme(theme) {
+  document.body.className = document.body.className.replace(/\btheme-\S+/g, '').trim();
+  if (theme && theme !== 'github') document.body.classList.add('theme-' + theme);
+  localStorage.setItem(CODE_THEME_KEY, theme);
+}
+function loadCodeTheme() {
+  const t = localStorage.getItem(CODE_THEME_KEY) || 'github';
+  const sel = document.getElementById('code-theme-select');
+  if (sel) sel.value = t;
+  setCodeTheme(t);
 }
 
 function renderCodeBlock(raw, lang) {
@@ -1206,6 +1300,7 @@ function openCardEditor(cardId) {
       document.getElementById('ecode-prompt').value = c.codePrompt || '';
       document.getElementById('ecode-answer').value = c.codeAnswer || '';
       document.getElementById('ecode-lang').value = c.codeLang || 'python';
+      refreshCodeAnswerHighlight();
     } else {
       document.getElementById('ec').value = c.clozeText || '';
     }
@@ -1222,6 +1317,7 @@ function openCardEditor(cardId) {
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
+  if (cardType === 'code') refreshCodeAnswerHighlight();
   const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
@@ -1243,6 +1339,9 @@ function setCardType(t) {
     if (btn) btn.classList.toggle('active', x === t);
     if (fields) fields.style.display = x === t ? 'block' : 'none';
   });
+  if (t === 'code') {
+    attachHighlightSync('ecode-answer', 'ecode-answer-highlight', () => document.getElementById('ecode-lang').value);
+  }
 }
 
 function renderEditorTags() {
@@ -1629,6 +1728,7 @@ function codeAnswerKey(e) {
       el.selectionStart = Math.max(lineStart, s + firstLineDelta);
       el.selectionEnd = lineEnd + (newBlock.length - block.length);
     }
+    el.dispatchEvent(new Event('input'));
     return;
   }
 
@@ -1647,6 +1747,7 @@ function codeAnswerKey(e) {
       const insert = '\n' + indent;
       el.value = el.value.slice(0, s) + insert + el.value.slice(s);
       el.selectionStart = el.selectionEnd = s + insert.length;
+      el.dispatchEvent(new Event('input'));
     }
   }
 }
@@ -2391,11 +2492,7 @@ function openLinkedCardEdit() {
 
 // ─── CODE RECALL REVIEW ───────────────────────────────────────────────────────
 let codeLines = [];       // expected lines (non-empty)
-let codeLineIdx = 0;      // which line we're on
-let codeCorrect = 0;
-let codeAttempts = 0;
-let codeResults = [];     // { expected, typed, match }
-
+// NOTE: original line-by-line typing mode is preserved in conversation history if we ever want to revert.
 function tokenize(line) {
   // split into meaningful tokens, ignoring pure whitespace tokens
   return line.trim().split(/(\s+|[()[\]{},.:;=+\-*/<>!&|^~%@#])/).filter(t => t.trim().length > 0);
@@ -2413,9 +2510,6 @@ function getExpectedLines(card) {
 }
 
 function renderCodeRev(main, card, pct) {
-  codeLines = getExpectedLines(card);
-  codeLineIdx = 0; codeCorrect = 0; codeAttempts = 0; codeResults = [];
-
   main.innerHTML = `<div class="review-wrap fs-md">
     ${progressHTML(pct)}
     <div class="code-recall-wrap">
@@ -2426,153 +2520,92 @@ function renderCodeRev(main, card, pct) {
       <div class="code-editor-area">
         <div class="code-editor-header">
           <span class="code-editor-lang">${esc(card.codeLang || 'python')}</span>
-          <span class="code-editor-hint">Type each line — Tab to indent · Enter to check</span>
+          <span class="code-editor-hint">Write the full solution, then check</span>
         </div>
-        <div class="code-line-list" id="code-line-list"></div>
+        <div class="code-highlight-wrap dark">
+          <div id="code-full-highlight" class="code-highlight-overlay lg"></div>
+          <textarea id="code-full-input" class="code-highlight-ta lg" placeholder="Type the code here..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+        </div>
       </div>
-      <div class="code-recall-stats" id="code-recall-stats"></div>
+      <div id="code-check-result"></div>
+      <div class="code-recall-stats" id="code-recall-stats" style="display:none;"></div>
       <div class="feedback-row" style="margin-top:8px;">
         <span class="feedback" id="code-feedback"></span>
       </div>
+      <button class="btn-check" id="code-check-btn" onclick="checkCodeFull()" style="margin-bottom:14px;">Check answer</button>
       ${ratingHTML(card)}
     </div>
   </div>`;
 
-  renderCodeLines();
-  focusCodeLineInput();
-}
-
-function focusCodeLineInput() {
   setTimeout(() => {
-    const inp = document.getElementById('code-line-input');
-    if (inp) {
-      inp.focus();
-      const v = inp.value; inp.value = ''; inp.value = v; // put cursor at end
-      inp.onkeydown = e => {
-        if (e.key === 'Enter') { e.preventDefault(); checkCodeLine(); }
-        if (e.key === 'Tab') { e.preventDefault(); const s = inp.selectionStart; inp.value = inp.value.slice(0,s) + '    ' + inp.value.slice(s); inp.selectionStart = inp.selectionEnd = s + 4; }
-      };
+    const ta = document.getElementById('code-full-input');
+    if (ta) {
+      ta.focus();
+      ta.onkeydown = codeAnswerKey;
+      attachHighlightSync('code-full-input', 'code-full-highlight', card.codeLang || 'python');
     }
   }, 30);
 }
 
-function renderCodeLines() {
-  const list = document.getElementById('code-line-list');
-  if (!list) return;
-  let html = '';
-  const totalLines = codeLines.length;
+function checkCodeFull() {
+  const card = revQueue[revIdx];
+  const ta = document.getElementById('code-full-input');
+  if (!ta) return;
 
-  codeLines.forEach((line, i) => {
+  const typedLines = ta.value.split('\n');
+  const expectedLines = getExpectedLines(card);
+  const maxLen = Math.max(typedLines.length, expectedLines.length);
+
+  let correct = 0, nonBlankTotal = 0, rowsHtml = '';
+  for (let i = 0; i < maxLen; i++) {
+    const expected = expectedLines[i] ?? '';
+    const typed = typedLines[i] ?? '';
     const lineNum = i + 1;
-    if (i < codeLineIdx) {
-      // done
-      const r = codeResults[i];
-      if (r) {
-        const cls = r.match ? 'match' : 'mismatch';
-        const expectedAttr = r.match ? '' : `data-expected="${esc(r.expected)}"`;
-        html += `<div class="code-line">
-          <div class="code-line-num">${lineNum}</div>
-          <div class="code-line-content"><div class="code-line-done ${cls}" ${expectedAttr}>${esc(r.typed)}</div></div>
-        </div>`;
-      } else {
-        // blank line — auto-skipped
-        html += `<div class="code-line">
-          <div class="code-line-num">${lineNum}</div>
-          <div class="code-line-content"><div class="code-line-done match" style="opacity:0.3">&nbsp;</div></div>
-        </div>`;
-      }
-    } else if (i === codeLineIdx) {
-      // current line — type directly into the code block itself
-      const indent = line.match(/^(\s*)/)?.[1] || '';
-      html += `<div class="code-line" id="current-code-line">
+    if (expected.trim() === '' && typed.trim() === '') {
+      rowsHtml += `<div class="code-line">
         <div class="code-line-num">${lineNum}</div>
-        <div class="code-line-content" style="display:flex;align-items:baseline;">
-          <span style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-faint);white-space:pre;flex-shrink:0;">${esc(indent)}</span><input type="text" id="code-line-input" class="code-line-input" style="flex:1;min-width:20px;width:auto;" autocomplete="off" autocorrect="off" spellcheck="false" />
-        </div>
+        <div class="code-line-content"><div class="code-line-done match" style="opacity:0.3">&nbsp;</div></div>
       </div>`;
-    } else {
-      // upcoming — hidden, just reserve the line's height so layout doesn't jump
-      html += `<div class="code-line">
-        <div class="code-line-num" style="opacity:0.3">${lineNum}</div>
-        <div class="code-line-content"><div class="code-line-upcoming">&nbsp;</div></div>
-      </div>`;
+      continue;
     }
-  });
+    nonBlankTotal++;
+    const match = linesMatch(typed, expected);
+    if (match) correct++;
+    const cls = match ? 'match' : 'mismatch';
+    const expectedAttr = match ? '' : ` data-expected="${esc(expected)}"`;
+    const displayTyped = !typed ? '&nbsp;' : (match ? highlightForLang(typed, card.codeLang) : esc(typed));
+    rowsHtml += `<div class="code-line">
+      <div class="code-line-num">${lineNum}</div>
+      <div class="code-line-content"><div class="code-line-done ${cls}"${expectedAttr}>${displayTyped}</div></div>
+    </div>`;
+  }
 
-  list.innerHTML = html;
+  document.getElementById('code-check-result').innerHTML = `<div class="code-editor-area" style="margin-top:14px;">
+    <div class="code-editor-header"><span class="code-editor-lang">result</span></div>
+    <div class="code-line-list">${rowsHtml}</div>
+  </div>`;
 
-  // scroll current line into view
-  const cur = document.getElementById('current-code-line');
-  if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-
-  // update stats
+  const acc = nonBlankTotal > 0 ? Math.round(correct / nonBlankTotal * 100) : 100;
   const statsEl = document.getElementById('code-recall-stats');
-  if (statsEl && codeLineIdx > 0) {
-    statsEl.innerHTML = `
-      <div class="cr-stat"><span class="ok">${codeCorrect}</span> / ${codeLineIdx} correct</div>
-      <div class="cr-stat">line <span>${codeLineIdx + 1}</span> of ${totalLines}</div>
-    `;
-  }
-}
+  statsEl.style.display = 'flex';
+  statsEl.innerHTML = `
+    <div class="cr-stat"><span class="ok">${correct}</span> / ${nonBlankTotal} lines correct</div>
+    <div class="cr-stat">${acc}% accuracy</div>
+  `;
 
-function checkCodeLine() {
-  // skip blank lines automatically
-  while (codeLineIdx < codeLines.length && codeLines[codeLineIdx].trim() === '') {
-    codeResults[codeLineIdx] = null; // blank line marker
-    codeLineIdx++;
-  }
-  if (codeLineIdx >= codeLines.length) { finishCodeRev(); return; }
-
-  const inp = document.getElementById('code-line-input');
   const fb = document.getElementById('code-feedback');
-  if (!inp) return;
+  fb.textContent = acc === 100 ? '✓ all lines correct' : `${correct}/${nonBlankTotal} lines correct (${acc}%)`;
+  fb.className = 'feedback ' + (acc === 100 ? 'ok' : 'bad');
 
-  const typed = inp.value;
-  const expected = codeLines[codeLineIdx];
-  codeAttempts++;
-
-  const match = linesMatch(typed, expected);
-  codeResults[codeLineIdx] = { typed, expected, match };
-  if (match) codeCorrect++;
-
-  fb.textContent = match ? '✓ correct' : `✗ expected: ${expected.trim()}`;
-  fb.className = 'feedback ' + (match ? 'ok' : 'bad');
-
-  codeLineIdx++;
-  inp.value = '';
-
-  // skip trailing blank lines
-  while (codeLineIdx < codeLines.length && codeLines[codeLineIdx].trim() === '') {
-    codeResults[codeLineIdx] = null;
-    codeLineIdx++;
-  }
-
-  if (codeLineIdx >= codeLines.length) {
-    finishCodeRev();
-  } else {
-    renderCodeLines();
-    focusCodeLineInput();
-  }
-}
-
-function finishCodeRev() {
-  const fb = document.getElementById('code-feedback');
-
-  const nonBlankLines = codeLines.filter(l => l.trim() !== '').length;
-  const acc = nonBlankLines > 0 ? Math.round(codeCorrect / nonBlankLines * 100) : 100;
-  if (fb) {
-    fb.textContent = `${codeCorrect}/${nonBlankLines} lines correct (${acc}%)`;
-    fb.className = 'feedback ' + (acc === 100 ? 'ok' : 'bad');
-  }
-
-  const rg = document.getElementById('rating-grid');
-  if (rg) rg.classList.add('show');
-  renderCodeLines();
+  ta.disabled = true;
+  document.getElementById('code-check-btn').style.display = 'none';
+  document.getElementById('rating-grid').classList.add('show');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderSidebar();
 setupCEKeydown();
+loadCodeTheme();
 </script>
 <!-- FOCUS SETUP MODAL -->
 <div class="focus-overlay" id="focus-overlay" onclick="if(event.target===this)closeFocusModal()">
