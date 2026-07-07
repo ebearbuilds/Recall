@@ -2509,6 +2509,58 @@ function getExpectedLines(card) {
   return (card.codeAnswer || '').split('\n'); // keep blank lines for structure
 }
 
+// ─── STRUCTURAL COMPARISON (ignore variable/function naming) ─────────────────
+// Renaming a variable consistently (e.g. `n` -> `num`) shouldn't count as wrong if
+// the logic is identical. We canonicalize identifiers to positional placeholders
+// (VAR0, VAR1, ...) based on order of first appearance, then compare token streams.
+const CANON_KEYWORDS = new Set(['def','class','return','if','elif','else','for','while','in','not','and','or','is','None','True','False','import','from','as','with','try','except','finally','raise','pass','break','continue','lambda','yield','global','nonlocal','del','assert','async','await']);
+const CANON_BUILTINS = new Set(['print','len','range','type','int','str','float','list','dict','set','tuple','bool','input','open','enumerate','zip','map','filter','sorted','reversed','sum','min','max','abs','round','isinstance','hasattr','getattr','setattr','super','staticmethod','classmethod','property','self']);
+
+function canonTokenizeFull(raw) {
+  // same token grammar as the highlighter, but returns a flat token list (keeps newlines as their own tokens)
+  const tokenRe = new RegExp(
+    '("""[\\s\\S]*?""")' +
+    "|('''[\\s\\S]*?''')" +
+    '|(#[^\\n]*)' +
+    '|("(?:[^"\\\\]|\\\\.)*")' +
+    "|('(?:[^'\\\\]|\\\\.)*')" +
+    '|(@\\w+)' +
+    '|([0-9]+\\.?[0-9]*)(?![\\w])' +
+    '|([A-Za-z_]\\w*)' +
+    '|([^\\w\'\"#@]+|.)',
+    'g'
+  );
+  const tokens = [];
+  let m;
+  while ((m = tokenRe.exec(raw)) !== null) {
+    const [full, triDbl, triSng, comment, dblStr, sngStr, dec, num, ident] = m;
+    if (triDbl || triSng || dblStr || sngStr) tokens.push({ type: 'str', text: full });
+    else if (comment) tokens.push({ type: 'comment', text: full });
+    else if (dec) tokens.push({ type: 'other', text: full });
+    else if (num) tokens.push({ type: 'num', text: full });
+    else if (ident) tokens.push({ type: 'ident', text: ident });
+    else tokens.push({ type: 'other', text: full });
+  }
+  return tokens;
+}
+
+function canonicalizeCode(raw) {
+  const tokens = canonTokenizeFull(raw || '');
+  const idMap = {};
+  let counter = 0;
+  let out = '';
+  for (const tok of tokens) {
+    if (tok.type === 'comment') continue; // comment wording never affects correctness
+    if (tok.type === 'ident' && !CANON_KEYWORDS.has(tok.text) && !CANON_BUILTINS.has(tok.text)) {
+      if (!(tok.text in idMap)) idMap[tok.text] = 'VAR' + (counter++);
+      out += idMap[tok.text];
+    } else {
+      out += tok.text;
+    }
+  }
+  return out;
+}
+
 function renderCodeRev(main, card, pct) {
   main.innerHTML = `<div class="review-wrap fs-md">
     ${progressHTML(pct)}
@@ -2520,7 +2572,7 @@ function renderCodeRev(main, card, pct) {
       <div class="code-editor-area">
         <div class="code-editor-header">
           <span class="code-editor-lang">${esc(card.codeLang || 'python')}</span>
-          <span class="code-editor-hint">Write the full solution, then check</span>
+          <span class="code-editor-hint">Variable names can differ — logic is what's checked</span>
         </div>
         <div class="code-highlight-wrap dark">
           <div id="code-full-highlight" class="code-highlight-overlay lg"></div>
@@ -2552,24 +2604,34 @@ function checkCodeFull() {
   const ta = document.getElementById('code-full-input');
   if (!ta) return;
 
-  const typedLines = ta.value.split('\n');
-  const expectedLines = getExpectedLines(card);
-  const maxLen = Math.max(typedLines.length, expectedLines.length);
+  const typedLinesRaw = ta.value.split('\n');
+  const expectedLinesRaw = getExpectedLines(card);
 
+  // canonicalize each snippet independently — consistent variable/function renaming
+  // (e.g. `n` -> `num`) won't count against you, only actual logic differences will.
+  const canonTypedAll = canonicalizeCode(ta.value).split('\n');
+  const canonExpectedAll = canonicalizeCode(card.codeAnswer || '').split('\n');
+
+  // strip out blank (and comment-only, since those canonicalize to blank) lines from BOTH
+  // sides before comparing, so extra/missing whitespace never shifts everything out of alignment.
+  const typedSig = [];
+  typedLinesRaw.forEach((raw, i) => { const c = canonTypedAll[i] ?? ''; if (c.trim() !== '') typedSig.push({ raw, canon: c }); });
+  const expectedSig = [];
+  expectedLinesRaw.forEach((raw, i) => { const c = canonExpectedAll[i] ?? ''; if (c.trim() !== '') expectedSig.push({ raw, canon: c }); });
+
+  const maxLen = Math.max(typedSig.length, expectedSig.length);
   let correct = 0, nonBlankTotal = 0, rowsHtml = '';
   for (let i = 0; i < maxLen; i++) {
-    const expected = expectedLines[i] ?? '';
-    const typed = typedLines[i] ?? '';
+    const typedEntry = typedSig[i];
+    const expectedEntry = expectedSig[i];
+    const typed = typedEntry ? typedEntry.raw : '';
+    const expected = expectedEntry ? expectedEntry.raw : '';
+    const canonTyp = typedEntry ? typedEntry.canon : '';
+    const canonExp = expectedEntry ? expectedEntry.canon : '';
     const lineNum = i + 1;
-    if (expected.trim() === '' && typed.trim() === '') {
-      rowsHtml += `<div class="code-line">
-        <div class="code-line-num">${lineNum}</div>
-        <div class="code-line-content"><div class="code-line-done match" style="opacity:0.3">&nbsp;</div></div>
-      </div>`;
-      continue;
-    }
+
     nonBlankTotal++;
-    const match = linesMatch(typed, expected);
+    const match = linesMatch(canonTyp, canonExp);
     if (match) correct++;
     const cls = match ? 'match' : 'mismatch';
     const expectedAttr = match ? '' : ` data-expected="${esc(expected)}"`;
