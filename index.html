@@ -172,8 +172,13 @@
   .code-line-content { flex: 1; position: relative; }
   .code-line-done { font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 3px 6px; border-radius: 3px; color: #c9d1d9; white-space: pre; }
   .code-line-done.match { background: rgba(10,207,131,0.08); }
+  .code-line-done.match.reordered { background: rgba(27,188,254,0.08); }
+  .code-line-done.match.reordered::after { content: 'reordered — logic ok'; display: block; color: var(--blue); text-decoration: none; font-size: 12px; font-style: italic; opacity: 0.8; }
   .code-line-done.mismatch { background: rgba(242,78,30,0.1); text-decoration: line-through; color: var(--red); }
   .code-line-done.mismatch::after { content: attr(data-expected); display: block; color: var(--green); text-decoration: none; font-size: 12px; opacity: 0.8; }
+  .code-line-done.extra { background: rgba(255,114,98,0.08); text-decoration: line-through; color: var(--coral); }
+  .code-line-done.extra::after { content: 'unexpected line'; display: block; color: var(--coral); text-decoration: none; font-size: 12px; font-style: italic; opacity: 0.8; }
+  .code-line-missing { background: rgba(242,78,30,0.06); border: 1px dashed var(--red); border-radius: 3px; color: var(--red); font-family: 'Space Mono', monospace; font-size: 13px; padding: 3px 8px; font-style: italic; opacity: 0.9; }
   .code-line-input { width: 100%; background: rgba(255,255,255,0.05); border: none; border-bottom: 2px solid var(--accent); color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 3px 6px; outline: none; }
   .code-line-input::placeholder { color: var(--text-faint); font-style: italic; }
   .code-full-editor { width: 100%; min-height: 260px; background: #111; border: none; color: #c9d1d9; font-family: 'Space Mono', monospace; font-size: 13px; line-height: 1.65; padding: 14px 16px; outline: none; resize: vertical; white-space: pre; tab-size: 4; }
@@ -1056,6 +1061,8 @@ function toggleFolder(id) {
 function selectDeck(id) {
   activeDeckId = id;
   activeTagFilter = null; // reset filter when switching decks
+  selectMode = false;
+  selectedCardIds.clear();
   renderSidebar();
   renderDeckMain();
 }
@@ -1145,17 +1152,82 @@ function renderDeckMain() {
         <div class="deck-actions">
           ${visibleDue > 0 ? `<button class="btn-add" onclick="startReview(false)">Review ${visibleDue} due</button>` : ''}
           ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="startReview(true)">Review all${activeTagFilter ? ' ↓' : ''}</button>` : ''}
+          ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="toggleSelectMode()">${selectMode ? 'Cancel select' : 'Select'}</button>` : ''}
           <button class="btn-secondary" onclick="openMoveDeckModal('${activeDeckId}')">Move / Rename</button>
           <button class="btn-secondary" onclick="deleteDeck('${activeDeckId}')">Delete</button>
         </div>
       </div>
       ${tagFilterRow}
+      ${selectMode ? bulkTagBarHTML(visibleCards) : ''}
       <div class="card-list">
         ${visibleCards.length === 0
           ? `<div class="empty-state"><div class="empty-title">No cards${activeTagFilter ? ' with this tag' : ' yet'}</div><div>${activeTagFilter ? 'Try a different tag or clear the filter.' : 'Add your first card to start practising.'}</div></div>`
           : visibleCards.map(c => cardRow(c)).join('')}
       </div>
     </div>`;
+}
+
+let selectMode = false;
+let selectedCardIds = new Set();
+
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedCardIds.clear();
+  renderDeckMain();
+}
+
+function toggleCardSelect(id) {
+  if (selectedCardIds.has(id)) selectedCardIds.delete(id);
+  else selectedCardIds.add(id);
+  renderDeckMain();
+}
+
+function selectAllVisible(visibleCards) {
+  const allSelected = visibleCards.every(c => selectedCardIds.has(c.id));
+  if (allSelected) visibleCards.forEach(c => selectedCardIds.delete(c.id));
+  else visibleCards.forEach(c => selectedCardIds.add(c.id));
+  renderDeckMain();
+}
+
+function bulkTagBarHTML(visibleCards) {
+  const n = selectedCardIds.size;
+  const allSelected = visibleCards.length > 0 && visibleCards.every(c => selectedCardIds.has(c.id));
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:2px;margin-bottom:16px;background:rgba(255,255,255,0.02);flex-wrap:wrap;">
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick='selectAllVisible(${JSON.stringify(visibleCards.map(c => c.id))})'>${allSelected ? 'Deselect all' : 'Select all'}</button>
+    <span style="font-size:12px;color:var(--text-muted);font-family:'Space Mono',monospace;">${n} selected</span>
+    <input class="text-input" id="bulk-tag-input" type="text" placeholder="tag name..." style="width:180px;margin-bottom:0;" ${n === 0 ? 'disabled' : ''} onkeydown="if(event.key==='Enter')applyBulkTag()" />
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" ${n === 0 ? 'disabled' : ''} onclick="applyBulkTag()">+ Add tag to ${n}</button>
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" ${n === 0 ? 'disabled' : ''} onclick="removeBulkTag()">− Remove tag from ${n}</button>
+  </div>`;
+}
+
+function applyBulkTag() {
+  const input = document.getElementById('bulk-tag-input');
+  const tag = (input.value || '').trim().toLowerCase();
+  if (!tag || selectedCardIds.size === 0) return;
+  state.cards.forEach(c => {
+    if (selectedCardIds.has(c.id)) {
+      if (!c.tags) c.tags = [];
+      if (!c.tags.includes(tag)) c.tags.push(tag);
+    }
+  });
+  save();
+  renderDeckMain();
+  renderSidebar();
+}
+
+function removeBulkTag() {
+  const input = document.getElementById('bulk-tag-input');
+  const tag = (input.value || '').trim().toLowerCase();
+  if (!tag || selectedCardIds.size === 0) return;
+  state.cards.forEach(c => {
+    if (selectedCardIds.has(c.id) && c.tags) {
+      c.tags = c.tags.filter(t => t !== tag);
+    }
+  });
+  save();
+  renderDeckMain();
+  renderSidebar();
 }
 
 function cardRow(c) {
@@ -1176,14 +1248,18 @@ function cardRow(c) {
         return `<span class="tag-pill" onclick="event.stopPropagation(); setTagFilter('${esc(t)}')" title="${esc(t)}">${label}</span>`;
       }).join('')}</div>`
     : '';
-  return `<div class="card-row" onclick="openCardEditor('${c.id}')" style="flex-direction:column;align-items:stretch;">
+  const checkboxHtml = selectMode
+    ? `<input type="checkbox" ${selectedCardIds.has(c.id) ? 'checked' : ''} style="margin-top:3px;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();toggleCardSelect('${c.id}')" />`
+    : '';
+  return `<div class="card-row" onclick="${selectMode ? `toggleCardSelect('${c.id}')` : `openCardEditor('${c.id}')`}" style="flex-direction:column;align-items:stretch;${selectedCardIds.has(c.id) ? 'border-color:var(--purple);background:rgba(162,89,255,0.05);' : ''}">
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%;">
+      ${checkboxHtml}
       <span class="card-type-badge ${badgeClass}">${c.type}</span>
       <div class="card-row-front" style="flex:1;">${md(front)}</div>
       ${isDue ? '<span class="card-due-tag">due</span>' : ''}
       <div class="card-row-btns" onclick="event.stopPropagation()">
-        <button class="card-btn" onclick="resetCard('${c.id}')">Reset</button>
-        <button class="card-btn del" data-del="${c.id}" onclick="deleteCard('${c.id}')">Delete</button>
+        ${selectMode ? '' : `<button class="card-btn" onclick="resetCard('${c.id}')">Reset</button>
+        <button class="card-btn del" data-del="${c.id}" onclick="deleteCard('${c.id}')">Delete</button>`}
       </div>
     </div>
     ${tagsHtml}
@@ -2492,7 +2568,6 @@ function openLinkedCardEdit() {
 
 // ─── CODE RECALL REVIEW ───────────────────────────────────────────────────────
 let codeLines = [];       // expected lines (non-empty)
-// NOTE: original line-by-line typing mode is preserved in conversation history if we ever want to revert.
 function tokenize(line) {
   // split into meaningful tokens, ignoring pure whitespace tokens
   return line.trim().split(/(\s+|[()[\]{},.:;=+\-*/<>!&|^~%@#])/).filter(t => t.trim().length > 0);
@@ -2509,15 +2584,16 @@ function getExpectedLines(card) {
   return (card.codeAnswer || '').split('\n'); // keep blank lines for structure
 }
 
-// ─── STRUCTURAL COMPARISON (ignore variable/function naming) ─────────────────
-// Renaming a variable consistently (e.g. `n` -> `num`) shouldn't count as wrong if
-// the logic is identical. We canonicalize identifiers to positional placeholders
-// (VAR0, VAR1, ...) based on order of first appearance, then compare token streams.
+// ─── STRUCTURAL COMPARISON (ignore variable naming, tolerate reordering) ──────
+// Renaming a variable consistently (e.g. `n` -> `num`) or writing two independent
+// statements in a different order shouldn't count as wrong if the logic is the
+// same. We canonicalize identifiers to positional placeholders and diff the
+// resulting line sequences with an LCS-based algorithm so lines are matched
+// wherever they appear, not only at the same index.
 const CANON_KEYWORDS = new Set(['def','class','return','if','elif','else','for','while','in','not','and','or','is','None','True','False','import','from','as','with','try','except','finally','raise','pass','break','continue','lambda','yield','global','nonlocal','del','assert','async','await']);
 const CANON_BUILTINS = new Set(['print','len','range','type','int','str','float','list','dict','set','tuple','bool','input','open','enumerate','zip','map','filter','sorted','reversed','sum','min','max','abs','round','isinstance','hasattr','getattr','setattr','super','staticmethod','classmethod','property','self']);
 
 function canonTokenizeFull(raw) {
-  // same token grammar as the highlighter, but returns a flat token list (keeps newlines as their own tokens)
   const tokenRe = new RegExp(
     '("""[\\s\\S]*?""")' +
     "|('''[\\s\\S]*?''')" +
@@ -2544,13 +2620,70 @@ function canonTokenizeFull(raw) {
   return tokens;
 }
 
+function extractIdentifiers(raw) {
+  const tokens = canonTokenizeFull(raw || '');
+  const seen = [], seenSet = new Set();
+  tokens.forEach(t => {
+    if (t.type === 'ident' && !CANON_KEYWORDS.has(t.text) && !CANON_BUILTINS.has(t.text) && !seenSet.has(t.text)) {
+      seenSet.add(t.text); seen.push(t.text);
+    }
+  });
+  return seen;
+}
+
+function substituteIdentifiers(raw, mapping) {
+  const tokens = canonTokenizeFull(raw || '');
+  let out = '';
+  tokens.forEach(t => {
+    if (t.type === 'comment') return; // comment wording never affects correctness
+    if (t.type === 'ident' && mapping[t.text] !== undefined) out += mapping[t.text];
+    else out += t.text;
+  });
+  return out;
+}
+
+function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const result = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+    for (const p of permutations(rest)) result.push([arr[i], ...p]);
+  }
+  return result;
+}
+
+// Search for the variable-name correspondence (typed name -> expected name) that
+// makes the most lines agree, trying every permutation when there's a small,
+// equal-sized set of identifiers on both sides (capped so it stays instant).
+function bestIdentifierMapping(typedRaw, expectedRaw, typedSigBase, expectedSigBase) {
+  const typedIdents = extractIdentifiers(typedRaw);
+  const expectedIdents = extractIdentifiers(expectedRaw);
+  if (typedIdents.length !== expectedIdents.length || typedIdents.length === 0 || typedIdents.length > 8) return null;
+
+  let bestScore = -1, bestMapping = null;
+  for (const perm of permutations(expectedIdents)) {
+    const mapping = {};
+    typedIdents.forEach((id, i) => { mapping[id] = perm[i]; });
+    const used = new Array(expectedSigBase.length).fill(false);
+    let score = 0;
+    for (const entry of typedSigBase) {
+      const mapped = substituteIdentifiers(entry.raw, mapping);
+      for (let j = 0; j < expectedSigBase.length; j++) {
+        if (!used[j] && linesMatch(mapped, expectedSigBase[j].raw)) { used[j] = true; score++; break; }
+      }
+    }
+    if (score > bestScore) { bestScore = score; bestMapping = mapping; }
+  }
+  return bestMapping;
+}
+
 function canonicalizeCode(raw) {
   const tokens = canonTokenizeFull(raw || '');
   const idMap = {};
   let counter = 0;
   let out = '';
   for (const tok of tokens) {
-    if (tok.type === 'comment') continue; // comment wording never affects correctness
+    if (tok.type === 'comment') continue;
     if (tok.type === 'ident' && !CANON_KEYWORDS.has(tok.text) && !CANON_BUILTINS.has(tok.text)) {
       if (!(tok.text in idMap)) idMap[tok.text] = 'VAR' + (counter++);
       out += idMap[tok.text];
@@ -2559,6 +2692,66 @@ function canonicalizeCode(raw) {
     }
   }
   return out;
+}
+
+// Diff two sequences of {raw, canon} line entries via longest-common-subsequence,
+// matching on canonical form. This finds matching lines wherever they appear
+// rather than only at the same index, so one reordered/swapped line doesn't
+// cascade into every following line being marked wrong.
+function diffLineSequences(typedSig, expectedSig) {
+  const n = typedSig.length, m = expectedSig.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = typedSig[i].canon === expectedSig[j].canon
+        ? dp[i + 1][j + 1] + 1
+        : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const ops = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (typedSig[i].canon === expectedSig[j].canon) { ops.push({ type: 'match', typed: typedSig[i] }); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { ops.push({ type: 'extra', typed: typedSig[i] }); i++; }
+    else { ops.push({ type: 'missing', expected: expectedSig[j] }); j++; }
+  }
+  while (i < n) { ops.push({ type: 'extra', typed: typedSig[i] }); i++; }
+  while (j < m) { ops.push({ type: 'missing', expected: expectedSig[j] }); j++; }
+  return ops;
+}
+
+// LCS is order-preserving, so a straight swap of two independent statements
+// shows up as one "extra" + one "missing" instead of two matches — this is the
+// bug you hit. A correctly-matched line can sit between the extra and its
+// corresponding missing line (LCS picks whichever alignment maximizes total
+// matches, which can interleave them), so pairing only within contiguous
+// broken runs isn't enough — reconcile extra/missing lines anywhere in the
+// whole sequence whenever their canonical form agrees, and re-label the pair
+// as a (reordered) match, keeping the extra's position so line order in the
+// result still roughly follows what the person typed.
+function reconcileReorderedBlocks(ops) {
+  const extraIdxs = [];
+  const missingIdxs = [];
+  ops.forEach((op, i) => { if (op.type === 'extra') extraIdxs.push(i); else if (op.type === 'missing') missingIdxs.push(i); });
+
+  const usedMissing = new Set();
+  const result = ops.slice();
+  const toRemove = new Set();
+
+  extraIdxs.forEach(ei => {
+    const e = ops[ei];
+    let foundIdx = -1;
+    for (const mi of missingIdxs) {
+      if (!usedMissing.has(mi) && ops[mi].expected.canon === e.typed.canon) { foundIdx = mi; break; }
+    }
+    if (foundIdx !== -1) {
+      usedMissing.add(foundIdx);
+      result[ei] = { type: 'match', typed: e.typed, reordered: true };
+      toRemove.add(foundIdx);
+    }
+  });
+
+  return result.filter((op, i) => !toRemove.has(i));
 }
 
 function renderCodeRev(main, card, pct) {
@@ -2572,7 +2765,7 @@ function renderCodeRev(main, card, pct) {
       <div class="code-editor-area">
         <div class="code-editor-header">
           <span class="code-editor-lang">${esc(card.codeLang || 'python')}</span>
-          <span class="code-editor-hint">Variable names can differ — logic is what's checked</span>
+          <span class="code-editor-hint">Variable names and line order can differ — logic is what's checked</span>
         </div>
         <div class="code-highlight-wrap dark">
           <div id="code-full-highlight" class="code-highlight-overlay lg"></div>
@@ -2607,46 +2800,62 @@ function checkCodeFull() {
   const typedLinesRaw = ta.value.split('\n');
   const expectedLinesRaw = getExpectedLines(card);
 
-  // canonicalize each snippet independently — consistent variable/function renaming
-  // (e.g. `n` -> `num`) won't count against you, only actual logic differences will.
+  // order-based canonicalization, used as a fallback comparison method when a
+  // direct identifier mapping can't be found, and to detect blank/comment-only lines.
   const canonTypedAll = canonicalizeCode(ta.value).split('\n');
   const canonExpectedAll = canonicalizeCode(card.codeAnswer || '').split('\n');
 
-  // strip out blank (and comment-only, since those canonicalize to blank) lines from BOTH
-  // sides before comparing, so extra/missing whitespace never shifts everything out of alignment.
-  const typedSig = [];
-  typedLinesRaw.forEach((raw, i) => { const c = canonTypedAll[i] ?? ''; if (c.trim() !== '') typedSig.push({ raw, canon: c }); });
-  const expectedSig = [];
-  expectedLinesRaw.forEach((raw, i) => { const c = canonExpectedAll[i] ?? ''; if (c.trim() !== '') expectedSig.push({ raw, canon: c }); });
+  // strip blank (and comment-only, since those canonicalize to blank) lines from
+  // both sides before comparing, so stray whitespace never shifts alignment.
+  const typedSigBase = [];
+  typedLinesRaw.forEach((raw, i) => { const c = canonTypedAll[i] ?? ''; if (c.trim() !== '') typedSigBase.push({ raw, canonFallback: tokenize(raw).join('\u0001') }); });
+  const expectedSigBase = [];
+  expectedLinesRaw.forEach((raw, i) => { const c = canonExpectedAll[i] ?? ''; if (c.trim() !== '') expectedSigBase.push({ raw, canonFallback: tokenize(raw).join('\u0001') }); });
 
-  const maxLen = Math.max(typedSig.length, expectedSig.length);
-  let correct = 0, nonBlankTotal = 0, rowsHtml = '';
-  for (let i = 0; i < maxLen; i++) {
-    const typedEntry = typedSig[i];
-    const expectedEntry = expectedSig[i];
-    const typed = typedEntry ? typedEntry.raw : '';
-    const expected = expectedEntry ? expectedEntry.raw : '';
-    const canonTyp = typedEntry ? typedEntry.canon : '';
-    const canonExp = expectedEntry ? expectedEntry.canon : '';
-    const lineNum = i + 1;
+  // try a direct variable-name correspondence (handles renaming); fall back to
+  // order-based canonicalization if it doesn't apply.
+  const mapping = bestIdentifierMapping(ta.value, card.codeAnswer || '', typedSigBase, expectedSigBase);
+  const typedSig = typedSigBase.map(e => ({ raw: e.raw, canon: mapping ? tokenize(substituteIdentifiers(e.raw, mapping)).join('\u0001') : e.canonFallback }));
+  const expectedSig = expectedSigBase.map(e => ({ raw: e.raw, canon: mapping ? tokenize(substituteIdentifiers(e.raw, {})).join('\u0001') : e.canonFallback }));
 
-    nonBlankTotal++;
-    const match = linesMatch(canonTyp, canonExp);
-    if (match) correct++;
-    const cls = match ? 'match' : 'mismatch';
-    const expectedAttr = match ? '' : ` data-expected="${esc(expected)}"`;
-    const displayTyped = !typed ? '&nbsp;' : (match ? highlightForLang(typed, card.codeLang) : esc(typed));
-    rowsHtml += `<div class="code-line">
-      <div class="code-line-num">${lineNum}</div>
-      <div class="code-line-content"><div class="code-line-done ${cls}"${expectedAttr}>${displayTyped}</div></div>
-    </div>`;
-  }
+  // diff-based alignment: matches lines wherever they appear, so a reordered pair
+  // only flags itself instead of cascading into every later line being wrong.
+  let ops = diffLineSequences(typedSig, expectedSig);
+  // then reconcile any leftover extra/missing pairs that are really just the
+  // same lines in a different order — this is the actual reorder fix.
+  ops = reconcileReorderedBlocks(ops);
+
+  let correct = 0, rowsHtml = '';
+  let lineNum = 0;
+  ops.forEach(op => {
+    lineNum++;
+    if (op.type === 'match') {
+      correct++;
+      const displayTyped = highlightForLang(op.typed.raw, card.codeLang);
+      const reorderedClass = op.reordered ? ' reordered' : '';
+      rowsHtml += `<div class="code-line">
+        <div class="code-line-num">${lineNum}</div>
+        <div class="code-line-content"><div class="code-line-done match${reorderedClass}">${displayTyped}</div></div>
+      </div>`;
+    } else if (op.type === 'extra') {
+      rowsHtml += `<div class="code-line">
+        <div class="code-line-num">${lineNum}</div>
+        <div class="code-line-content"><div class="code-line-done extra">${esc(op.typed.raw)}</div></div>
+      </div>`;
+    } else { // missing
+      rowsHtml += `<div class="code-line">
+        <div class="code-line-num">${lineNum}</div>
+        <div class="code-line-content"><div class="code-line-missing">missing: ${esc(op.expected.raw.trim())}</div></div>
+      </div>`;
+    }
+  });
 
   document.getElementById('code-check-result').innerHTML = `<div class="code-editor-area" style="margin-top:14px;">
     <div class="code-editor-header"><span class="code-editor-lang">result</span></div>
     <div class="code-line-list">${rowsHtml}</div>
   </div>`;
 
+  const nonBlankTotal = expectedSig.length;
   const acc = nonBlankTotal > 0 ? Math.round(correct / nonBlankTotal * 100) : 100;
   const statsEl = document.getElementById('code-recall-stats');
   statsEl.style.display = 'flex';
