@@ -1182,18 +1182,19 @@ function toggleCardSelect(id) {
   renderDeckMain();
 }
 
-function selectAllVisible(visibleCards) {
-  const allSelected = visibleCards.every(c => selectedCardIds.has(c.id));
-  if (allSelected) visibleCards.forEach(c => selectedCardIds.delete(c.id));
-  else visibleCards.forEach(c => selectedCardIds.add(c.id));
+function selectAllVisible(ids) {
+  const allSelected = ids.length > 0 && ids.every(id => selectedCardIds.has(id));
+  if (allSelected) ids.forEach(id => selectedCardIds.delete(id));
+  else ids.forEach(id => selectedCardIds.add(id));
   renderDeckMain();
 }
 
 function bulkTagBarHTML(visibleCards) {
   const n = selectedCardIds.size;
-  const allSelected = visibleCards.length > 0 && visibleCards.every(c => selectedCardIds.has(c.id));
+  const ids = visibleCards.map(c => c.id);
+  const allSelected = ids.length > 0 && ids.every(id => selectedCardIds.has(id));
   return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:2px;margin-bottom:16px;background:rgba(255,255,255,0.02);flex-wrap:wrap;">
-    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick='selectAllVisible(${JSON.stringify(visibleCards.map(c => c.id))})'>${allSelected ? 'Deselect all' : 'Select all'}</button>
+    <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick='selectAllVisible(${JSON.stringify(ids)})'>${allSelected ? 'Deselect all' : 'Select all'}</button>
     <span style="font-size:12px;color:var(--text-muted);font-family:'Space Mono',monospace;">${n} selected</span>
     <input class="text-input" id="bulk-tag-input" type="text" placeholder="tag name..." style="width:180px;margin-bottom:0;" ${n === 0 ? 'disabled' : ''} onkeydown="if(event.key==='Enter')applyBulkTag()" />
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" ${n === 0 ? 'disabled' : ''} onclick="applyBulkTag()">+ Add tag to ${n}</button>
