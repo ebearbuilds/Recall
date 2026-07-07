@@ -156,9 +156,39 @@
   .type-basic { background: var(--blue-dim); color: var(--blue); }
   .type-cloze { background: var(--purple-dim); color: var(--purple); }
   .type-code { background: rgba(10,207,131,0.1); color: var(--green); }
+  .type-cli { background: rgba(240,136,62,0.12); color: #f0883e; }
 
   /* code recall review */
   .code-recall-wrap { width: 100%; }
+
+  /* CLI recall — terminal window look */
+  .cli-terminal { background: #0d1117; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+  .cli-titlebar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #161b22; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .cli-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .cli-dot.red { background: #ff5f56; } .cli-dot.yellow { background: #ffbd2e; } .cli-dot.green { background: #27c93f; }
+  .cli-titlebar-label { margin-left: 8px; font-family: 'Space Mono', monospace; font-size: 11px; color: #7d8590; }
+  .cli-body { padding: 20px 22px; font-family: 'Space Mono', monospace; font-size: 14px; line-height: 1.9; }
+  .cli-comment-line { color: #7d8590; margin-bottom: 14px; }
+  .cli-comment-line::before { content: '# '; }
+  .cli-prompt-row { display: flex; align-items: center; gap: 8px; }
+  .cli-prompt-sigil { color: #27c93f; font-weight: 700; flex-shrink: 0; }
+  .cli-prompt-path { color: #58a6ff; flex-shrink: 0; }
+  .cli-input {
+    flex: 1; background: none; border: none; outline: none; color: #f0f0f0;
+    font-family: 'Space Mono', monospace; font-size: 14px; caret-color: #27c93f;
+  }
+  .cli-input::placeholder { color: #444c56; font-style: italic; }
+  .cli-input:disabled { opacity: 1; }
+  .cli-result-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .cli-result-row.correct .cli-prompt-sigil { color: #27c93f; }
+  .cli-result-row.incorrect .cli-prompt-sigil { color: #ff5f56; }
+  .cli-typed { font-family: 'Space Mono', monospace; font-size: 14px; }
+  .cli-typed.incorrect { color: #ff5f56; text-decoration: line-through; opacity: 0.85; }
+  .cli-accepted-line { color: #27c93f; font-family: 'Space Mono', monospace; font-size: 13px; margin-top: 8px; }
+  .cli-accepted-line::before { content: '✓ accepted: '; color: #7d8590; }
+  .cli-hint-line { color: #7d8590; font-family: 'Space Mono', monospace; font-size: 12px; margin-top: 10px; font-style: italic; }
+  .cli-cursor { display: inline-block; width: 8px; height: 16px; background: #f0f0f0; vertical-align: middle; animation: cliBlink 1s step-end infinite; margin-left: 2px; }
+  @keyframes cliBlink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
   .code-prompt-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 4px; padding: 20px 24px; margin-bottom: 20px; }
   .code-prompt-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-bottom: 10px; }
   .code-prompt-text { font-size: 16px; line-height: 1.6; color: var(--text); }
@@ -558,6 +588,7 @@
       <button class="type-btn active" id="etype-basic" onclick="setCardType('basic')">Basic</button>
       <button class="type-btn" id="etype-cloze" onclick="setCardType('cloze')">Cloze deletion</button>
       <button class="type-btn" id="etype-code" onclick="setCardType('code')">Code recall</button>
+      <button class="type-btn" id="etype-cli" onclick="setCardType('cli')">CLI recall</button>
     </div>
 
     <!-- BASIC -->
@@ -622,6 +653,17 @@
         <div id="ecode-answer-highlight" class="code-highlight-overlay"></div>
         <textarea class="code-highlight-ta" id="ecode-answer" placeholder="def fibonacci(n):&#10;    if n <= 1:&#10;        return n&#10;    return fibonacci(n-1) + fibonacci(n-2)" spellcheck="false" onkeydown="codeAnswerKey(event)"></textarea>
       </div>
+    </div>
+
+    <!-- CLI RECALL -->
+    <div id="cli-fields" style="display:none;">
+      <div class="field-label">Prompt</div>
+      <textarea class="editor-ta" id="ecli-prompt" placeholder="e.g. Find all files modified in the last 7 days" onkeydown="taKey(event,'ecli-prompt')" style="min-height:70px;"></textarea>
+      <div class="field-label">Accepted command(s)</div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">One per line. Any of these count as correct — flags can be typed in any order.</div>
+      <textarea class="editor-ta" id="ecli-answers" placeholder="find . -mtime -7&#10;find . -mtime -7 -type f" style="min-height:90px;font-family:'Space Mono',monospace;"></textarea>
+      <div class="field-label">Hint <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <input class="text-input" id="ecli-hint" type="text" placeholder="e.g. think about the -mtime flag" />
     </div>
 
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
@@ -1237,8 +1279,10 @@ function cardRow(c) {
     ? c.clozeText.replace(/\{\{c\d+::(.+?)\}\}/g,'[...]').slice(0,120)
     : c.type === 'code'
     ? (c.codePrompt || '').slice(0, 120)
+    : c.type === 'cli'
+    ? (c.cliPrompt || '').slice(0, 120)
     : (c.front || '').slice(0,120);
-  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : 'type-basic';
+  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : 'type-basic';
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
     ? `<div class="card-tags-row">${tags.map(t => {
@@ -1378,6 +1422,10 @@ function openCardEditor(cardId) {
       document.getElementById('ecode-answer').value = c.codeAnswer || '';
       document.getElementById('ecode-lang').value = c.codeLang || 'python';
       refreshCodeAnswerHighlight();
+    } else if (c.type === 'cli') {
+      document.getElementById('ecli-prompt').value = c.cliPrompt || '';
+      document.getElementById('ecli-answers').value = (c.cliAnswers || []).join('\n');
+      document.getElementById('ecli-hint').value = c.cliHint || '';
     } else {
       document.getElementById('ec').value = c.clozeText || '';
     }
@@ -1390,12 +1438,15 @@ function openCardEditor(cardId) {
     document.getElementById('ec').value = '';
     document.getElementById('ecode-prompt').value = '';
     document.getElementById('ecode-answer').value = '';
+    document.getElementById('ecli-prompt').value = '';
+    document.getElementById('ecli-answers').value = '';
+    document.getElementById('ecli-hint').value = '';
     currentEditorTags = [];
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
   if (cardType === 'code') refreshCodeAnswerHighlight();
-  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : 'ef';
+  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
@@ -1410,7 +1461,7 @@ function closeCardEditor() {
 
 function setCardType(t) {
   cardType = t;
-  ['basic','cloze','code'].forEach(x => {
+  ['basic','cloze','code','cli'].forEach(x => {
     const btn = document.getElementById('etype-' + x);
     const fields = document.getElementById(x + '-fields');
     if (btn) btn.classList.toggle('active', x === t);
@@ -1518,7 +1569,7 @@ function saveCard() {
     } else {
       state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'code', codePrompt, codeAnswer, codeLang, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
-  } else {
+  } else if (cardType === 'cloze') {
     const ct = document.getElementById('ec').value.trim();
     document.getElementById('ec').style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
     if (!ct || !ct.includes('{{c')) return;
@@ -1527,6 +1578,19 @@ function saveCard() {
       if (c) { c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags]; }
     } else {
       state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else if (cardType === 'cli') {
+    const cliPrompt = document.getElementById('ecli-prompt').value.trim();
+    const cliAnswers = document.getElementById('ecli-answers').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const cliHint = document.getElementById('ecli-hint').value.trim();
+    document.getElementById('ecli-prompt').style.borderColor = cliPrompt ? '' : 'var(--red)';
+    document.getElementById('ecli-answers').style.borderColor = cliAnswers.length ? '' : 'var(--red)';
+    if (!cliPrompt || !cliAnswers.length) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   }
   save();
@@ -1865,6 +1929,7 @@ function renderRevCard() {
   const pct = Math.round(revIdx / revQueue.length * 100);
   if (card.type === 'cloze') renderClozeRev(main, card, pct);
   else if (card.type === 'code') renderCodeRev(main, card, pct);
+  else if (card.type === 'cli') renderCliRev(main, card, pct);
   else renderFlipRev(main, card, pct);
 }
 
@@ -2753,6 +2818,103 @@ function reconcileReorderedBlocks(ops) {
   });
 
   return result.filter((op, i) => !toRemove.has(i));
+}
+
+// ─── CLI RECALL REVIEW ────────────────────────────────────────────────────────
+function normalizeCliCommand(s) {
+  return (s || '').trim().replace(/\s+/g, ' ');
+}
+
+// Accept flags/args in any order: split on whitespace, treat the first token
+// (the base command) as position-sensitive, and the rest as an unordered set.
+// This tolerates `ls -la` vs `ls -al` while still requiring the right command.
+function cliCommandsMatch(typed, accepted) {
+  const t = normalizeCliCommand(typed);
+  const a = normalizeCliCommand(accepted);
+  if (!t) return false;
+  if (t === a) return true;
+  const tParts = t.split(' ');
+  const aParts = a.split(' ');
+  if (tParts[0] !== aParts[0]) return false;
+  if (tParts.length !== aParts.length) return false;
+  const tRest = tParts.slice(1).slice().sort();
+  const aRest = aParts.slice(1).slice().sort();
+  return tRest.every((tok, i) => tok === aRest[i]);
+}
+
+function checkCliMatch(typed, card) {
+  const accepted = card.cliAnswers || [];
+  for (const a of accepted) {
+    if (cliCommandsMatch(typed, a)) return a;
+  }
+  return null;
+}
+
+function renderCliRev(main, card, pct) {
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cli-terminal">
+      <div class="cli-titlebar">
+        <span class="cli-dot red"></span><span class="cli-dot yellow"></span><span class="cli-dot green"></span>
+        <span class="cli-titlebar-label">zsh — recall</span>
+      </div>
+      <div class="cli-body">
+        <div class="cli-comment-line">${esc(card.cliPrompt || '')}</div>
+        <div class="cli-prompt-row" id="cli-prompt-row">
+          <span class="cli-prompt-sigil">➜</span>
+          <span class="cli-prompt-path">~</span>
+          <input type="text" id="cli-input" class="cli-input" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type the command…" />
+        </div>
+        <div id="cli-result"></div>
+      </div>
+    </div>
+    <div class="feedback-row" style="margin-top:2px;">
+      <span class="feedback" id="cli-feedback"></span>
+    </div>
+    <button class="btn-check" id="cli-check-btn" onclick="checkCli()" style="margin-bottom:14px;">Check answer</button>
+    ${ratingHTML(card)}
+  </div>`;
+
+  setTimeout(() => {
+    const inp = document.getElementById('cli-input');
+    if (inp) { inp.focus(); inp.onkeydown = e => { if (e.key === 'Enter') checkCli(); }; }
+  }, 30);
+}
+
+function checkCli() {
+  const card = revQueue[revIdx];
+  const inp = document.getElementById('cli-input');
+  if (!inp) return;
+  const typed = inp.value;
+  const matched = checkCliMatch(typed, card);
+  const ok = !!matched;
+
+  inp.disabled = true;
+  const row = document.getElementById('cli-prompt-row');
+  row.classList.add(ok ? 'correct' : 'incorrect');
+  row.innerHTML = `
+    <span class="cli-prompt-sigil">➜</span>
+    <span class="cli-prompt-path">~</span>
+    <span class="cli-typed${ok ? '' : ' incorrect'}">${esc(typed) || '&nbsp;'}</span>
+  `;
+
+  const resultEl = document.getElementById('cli-result');
+  let html = '';
+  if (!ok) {
+    html += `<div class="cli-accepted-line">${esc((card.cliAnswers || [])[0] || '')}</div>`;
+    if ((card.cliAnswers || []).length > 1) {
+      html += `<div style="color:#7d8590;font-family:'Space Mono',monospace;font-size:12px;margin-top:2px;">(${card.cliAnswers.length - 1} other accepted answer${card.cliAnswers.length - 1 !== 1 ? 's' : ''})</div>`;
+    }
+  }
+  if (card.cliHint && !ok) html += `<div class="cli-hint-line">hint: ${esc(card.cliHint)}</div>`;
+  resultEl.innerHTML = html;
+
+  const fb = document.getElementById('cli-feedback');
+  fb.textContent = ok ? '✓ correct' : '✗ incorrect';
+  fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
+
+  document.getElementById('cli-check-btn').style.display = 'none';
+  document.getElementById('rating-grid').classList.add('show');
 }
 
 function renderCodeRev(main, card, pct) {
