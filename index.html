@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='12' cy='20' r='7' fill='%23F24E1E'/%3E%3Ccircle cx='20' cy='20' r='7' fill='%23FF7262'/%3E%3Ccircle cx='8' cy='13' r='7' fill='%23A259FF'/%3E%3Ccircle cx='16' cy='11' r='7' fill='%231ABCFE'/%3E%3Ccircle cx='24' cy='13' r='7' fill='%230ACF83'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -157,6 +158,20 @@
   .type-cloze { background: var(--purple-dim); color: var(--purple); }
   .type-code { background: rgba(10,207,131,0.1); color: var(--green); }
   .type-cli { background: rgba(240,136,62,0.12); color: #f0883e; }
+  .type-ayah { background: rgba(255,255,255,0.08); color: #d4b483; }
+
+  /* Ayah continuation — tap-to-arrange word tiles */
+  .ayah-ref-label { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .ayah-prompt-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 24px 28px; margin-bottom: 20px; }
+  .ayah-arabic-text { direction: rtl; font-family: 'Amiri', serif; font-size: 30px; line-height: 2.1; color: var(--text); text-align: right; }
+  .ayah-answer-row { direction: rtl; display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; border: 1px dashed var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; align-items: center; }
+  .ayah-answer-row.empty::before { content: 'tap the tiles below, in order'; color: var(--text-faint); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-style: italic; direction: ltr; }
+  .ayah-bank { direction: rtl; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .ayah-tile { font-family: 'Amiri', serif; font-size: 24px; padding: 8px 18px; border-radius: 8px; background: var(--bg-card); border: 1.5px solid var(--border-strong); cursor: pointer; transition: all 0.12s; user-select: none; color: var(--text); }
+  .ayah-tile:hover { border-color: var(--accent); }
+  .ayah-tile.placed { opacity: 0.25; pointer-events: none; }
+  .ayah-tile.correct-flash { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .ayah-tile.wrong-flash { border-color: var(--red); background: var(--red-dim); color: var(--red); }
 
   /* code recall review */
   .code-recall-wrap { width: 100%; }
@@ -557,6 +572,7 @@
     <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="document.getElementById('import-input').click()">Import</button>
     <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importData(event)" />
     <div class="due-pill" id="due-pill">0 due</div>
+    <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="openSurahModal()">Import surah</button>
     <button class="btn-add" onclick="openCardEditor()">+ Add card</button>
   </div>
 </nav>
@@ -589,6 +605,7 @@
       <button class="type-btn" id="etype-cloze" onclick="setCardType('cloze')">Cloze deletion</button>
       <button class="type-btn" id="etype-code" onclick="setCardType('code')">Code recall</button>
       <button class="type-btn" id="etype-cli" onclick="setCardType('cli')">CLI recall</button>
+      <button class="type-btn" id="etype-ayah" onclick="setCardType('ayah')">Ayah continuation</button>
     </div>
 
     <!-- BASIC -->
@@ -666,6 +683,19 @@
       <input class="text-input" id="ecli-hint" type="text" placeholder="e.g. think about the -mtime flag" />
     </div>
 
+    <!-- AYAH CONTINUATION -->
+    <div id="ayah-fields" style="display:none;">
+      <div class="field-label">Reference <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional, e.g. Al-Baqarah 255)</span></div>
+      <input class="text-input" id="eayah-ref" type="text" placeholder="e.g. Al-Baqarah 255" />
+      <div class="field-label">Beginning of the ayah (shown to you)</div>
+      <textarea class="editor-ta" id="eayah-prompt" dir="rtl" placeholder="بِسْمِ اللَّهِ الرَّحْمَٰنِ" style="min-height:70px;font-family:'Amiri',serif;font-size:20px;"></textarea>
+      <div class="field-label">Continuation (what you'll reconstruct)</div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">Words are split by spaces and shuffled into tiles during review.</div>
+      <textarea class="editor-ta" id="eayah-continuation" dir="rtl" placeholder="الرَّحِيمِ" style="min-height:70px;font-family:'Amiri',serif;font-size:20px;"></textarea>
+      <div class="field-label">Decoy words <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — extra wrong tiles, space-separated)</span></div>
+      <input class="text-input" id="eayah-decoys" dir="rtl" type="text" placeholder="كلمات إضافية" style="font-family:'Amiri',serif;font-size:18px;" />
+    </div>
+
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
     <div class="editor-tags-row" id="editor-tags-row"></div>
     <div class="tag-input-row">
@@ -711,6 +741,24 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeFolderModal()">Cancel</button>
       <button class="btn-save" onclick="saveFolder()">Create folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT SURAH MODAL -->
+<div class="overlay" id="surah-overlay" onclick="if(event.target===this)closeSurahModal()" style="z-index:250;">
+  <div class="modal">
+    <div class="modal-title">Import a surah</div>
+    <div class="field-label">Deck</div>
+    <select class="text-input" id="surah-deck-select"></select>
+    <div class="field-label">Surah name</div>
+    <input class="text-input" id="surah-name-input" type="text" placeholder="e.g. Ad-Duha" />
+    <div class="field-label">Verses <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(one per line, in order)</span></div>
+    <div style="font-size:11px;color:var(--text-faint);font-family:'Space Mono',monospace;margin-bottom:8px;">A card is generated for each consecutive pair — verse N is shown as context, verse N+1 is what you reconstruct from tiles.</div>
+    <textarea class="editor-ta" id="surah-verses-input" dir="rtl" placeholder="وَالضُّحَىٰ&#10;وَاللَّيْلِ إِذَا سَجَىٰ&#10;مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ" style="min-height:220px;font-family:'Amiri',serif;font-size:19px;"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSurahModal()">Cancel</button>
+      <button class="btn-save" onclick="generateSurahCards()">Generate cards</button>
     </div>
   </div>
 </div>
@@ -1155,6 +1203,7 @@ function renderTagTree(tree, allCards, depth) {
       ? node.fullTag
       : `<span style="color:var(--text-faint)">${parts.slice(0, -1).join('::') + '::'}</span>${parts[parts.length - 1]}`;
     return `<span class="tag-pill${isActive ? ' active' : ''}" ${indent} onclick="setTagFilter('${esc(node.fullTag)}')" title="${esc(node.fullTag)}">${label} <span style="opacity:0.6">(${count})</span></span>`
+      + `<button onclick="reviewTagInOrder('${esc(node.fullTag)}')" title="Review only ${esc(node.fullTag)}, in order" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:11px;padding:0 4px;vertical-align:middle;">▶</button>`
       + (hasChildren ? renderTagTree(node.children, allCards, depth + 1) : '');
   }).join('');
 }
@@ -1194,6 +1243,7 @@ function renderDeckMain() {
         <div class="deck-actions">
           ${visibleDue > 0 ? `<button class="btn-add" onclick="startReview(false)">Review ${visibleDue} due</button>` : ''}
           ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="startReview(true)">Review all${activeTagFilter ? ' ↓' : ''}</button>` : ''}
+          ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="startReview(true, true)">Review in order</button>` : ''}
           ${visibleCards.length > 0 ? `<button class="btn-secondary" onclick="toggleSelectMode()">${selectMode ? 'Cancel select' : 'Select'}</button>` : ''}
           <button class="btn-secondary" onclick="openMoveDeckModal('${activeDeckId}')">Move / Rename</button>
           <button class="btn-secondary" onclick="deleteDeck('${activeDeckId}')">Delete</button>
@@ -1281,8 +1331,10 @@ function cardRow(c) {
     ? (c.codePrompt || '').slice(0, 120)
     : c.type === 'cli'
     ? (c.cliPrompt || '').slice(0, 120)
+    : c.type === 'ayah'
+    ? (c.ayahPrompt || '').slice(0, 120)
     : (c.front || '').slice(0,120);
-  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : 'type-basic';
+  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'ayah' ? 'type-ayah' : 'type-basic';
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
     ? `<div class="card-tags-row">${tags.map(t => {
@@ -1319,6 +1371,55 @@ function openFolderModal() {
   document.getElementById('folder-name-input').onkeydown = e => { if (e.key === 'Enter') saveFolder(); };
 }
 function closeFolderModal() { document.getElementById('folder-overlay').classList.remove('open'); }
+
+// ─── IMPORT SURAH (bulk ayah-continuation card generation) ────────────────────
+function slugify(s) { return (s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+function openSurahModal() {
+  const sel = document.getElementById('surah-deck-select');
+  sel.innerHTML = state.decks.map(d => `<option value="${d.id}"${d.id === activeDeckId ? ' selected' : ''}>${esc(d.name)}</option>`).join('') || '<option value="">— create a deck first —</option>';
+  document.getElementById('surah-name-input').value = '';
+  document.getElementById('surah-verses-input').value = '';
+  document.getElementById('surah-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('surah-name-input').focus(), 50);
+}
+function closeSurahModal() { document.getElementById('surah-overlay').classList.remove('open'); }
+
+function generateSurahCards() {
+  const deckId = document.getElementById('surah-deck-select').value;
+  const surahName = document.getElementById('surah-name-input').value.trim();
+  const verses = document.getElementById('surah-verses-input').value.split('\n').map(v => v.trim()).filter(Boolean);
+
+  if (!deckId) { alert('Create or select a deck first.'); return; }
+  if (!surahName) { document.getElementById('surah-name-input').style.borderColor = 'var(--red)'; return; }
+  if (verses.length < 2) { document.getElementById('surah-verses-input').style.borderColor = 'var(--red)'; alert('Paste at least 2 verses — a card is generated per consecutive pair.'); return; }
+
+  const tag = 'quran::' + slugify(surahName);
+  const allWords = [...new Set(verses.flatMap(v => v.split(/\s+/)))];
+
+  for (let i = 0; i < verses.length - 1; i++) {
+    const nextWords = verses[i + 1].split(/\s+/).filter(Boolean);
+    const decoyPool = allWords.filter(w => !nextWords.includes(w));
+    const decoys = shuffleArr(decoyPool).slice(0, Math.min(3, decoyPool.length));
+    state.cards.push({
+      id: 'c_' + Date.now() + '_' + i,
+      deckId, type: 'ayah',
+      ayahRef: `${surahName} ${i + 1}→${i + 2}`,
+      ayahPrompt: verses[i],
+      ayahWords: nextWords,
+      ayahDecoys: decoys,
+      ayahOrderIdx: i,
+      interval: 1, due: Date.now(), ease: 2.5, reps: 0,
+      tags: [tag]
+    });
+  }
+
+  save();
+  closeSurahModal();
+  if (activeDeckId === deckId) renderDeckMain();
+  renderSidebar();
+  alert(`Generated ${verses.length - 1} card${verses.length - 1 !== 1 ? 's' : ''}, tagged "${tag}".`);
+}
 function saveFolder() {
   const name = document.getElementById('folder-name-input').value.trim();
   if (!name) return;
@@ -1426,6 +1527,11 @@ function openCardEditor(cardId) {
       document.getElementById('ecli-prompt').value = c.cliPrompt || '';
       document.getElementById('ecli-answers').value = (c.cliAnswers || []).join('\n');
       document.getElementById('ecli-hint').value = c.cliHint || '';
+    } else if (c.type === 'ayah') {
+      document.getElementById('eayah-ref').value = c.ayahRef || '';
+      document.getElementById('eayah-prompt').value = c.ayahPrompt || '';
+      document.getElementById('eayah-continuation').value = (c.ayahWords || []).join(' ');
+      document.getElementById('eayah-decoys').value = (c.ayahDecoys || []).join(' ');
     } else {
       document.getElementById('ec').value = c.clozeText || '';
     }
@@ -1441,12 +1547,16 @@ function openCardEditor(cardId) {
     document.getElementById('ecli-prompt').value = '';
     document.getElementById('ecli-answers').value = '';
     document.getElementById('ecli-hint').value = '';
+    document.getElementById('eayah-ref').value = '';
+    document.getElementById('eayah-prompt').value = '';
+    document.getElementById('eayah-continuation').value = '';
+    document.getElementById('eayah-decoys').value = '';
     currentEditorTags = [];
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
   if (cardType === 'code') refreshCodeAnswerHighlight();
-  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : 'ef';
+  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'ayah' ? 'eayah-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
@@ -1461,7 +1571,7 @@ function closeCardEditor() {
 
 function setCardType(t) {
   cardType = t;
-  ['basic','cloze','code','cli'].forEach(x => {
+  ['basic','cloze','code','cli','ayah'].forEach(x => {
     const btn = document.getElementById('etype-' + x);
     const fields = document.getElementById(x + '-fields');
     if (btn) btn.classList.toggle('active', x === t);
@@ -1591,6 +1701,20 @@ function saveCard() {
       if (c) { c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli'; c.tags = [...currentEditorTags]; }
     } else {
       state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else if (cardType === 'ayah') {
+    const ayahRef = document.getElementById('eayah-ref').value.trim();
+    const ayahPrompt = document.getElementById('eayah-prompt').value.trim();
+    const ayahWords = document.getElementById('eayah-continuation').value.trim().split(/\s+/).filter(Boolean);
+    const ayahDecoys = document.getElementById('eayah-decoys').value.trim().split(/\s+/).filter(Boolean);
+    document.getElementById('eayah-prompt').style.borderColor = ayahPrompt ? '' : 'var(--red)';
+    document.getElementById('eayah-continuation').style.borderColor = ayahWords.length ? '' : 'var(--red)';
+    if (!ayahPrompt || !ayahWords.length) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) { c.ayahRef = ayahRef; c.ayahPrompt = ayahPrompt; c.ayahWords = ayahWords; c.ayahDecoys = ayahDecoys; c.type = 'ayah'; c.tags = [...currentEditorTags]; }
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'ayah', ayahRef, ayahPrompt, ayahWords, ayahDecoys, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   }
   save();
@@ -1912,12 +2036,21 @@ function deleteCard(id) {
 }
 
 // ─── REVIEW ───────────────────────────────────────────────────────────────────
-function startReview(all) {
+function reviewTagInOrder(tag) {
+  activeTagFilter = tag;
+  startReview(true, true);
+}
+
+function startReview(all, sequential) {
   let pool = state.cards.filter(c => c.deckId === activeDeckId);
   if (activeTagFilter) pool = pool.filter(c => tagMatches(c.tags, activeTagFilter));
   pool = pool.filter(c => all || c.due <= Date.now());
   revQueue = [...pool];
-  for (let i = revQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [revQueue[i],revQueue[j]]=[revQueue[j],revQueue[i]]; }
+  if (sequential) {
+    revQueue.sort((a, b) => (a.ayahOrderIdx ?? Infinity) - (b.ayahOrderIdx ?? Infinity));
+  } else {
+    for (let i = revQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [revQueue[i],revQueue[j]]=[revQueue[j],revQueue[i]]; }
+  }
   revIdx = 0; revFlipped = false; revResults = { again:0, hard:0, good:0, easy:0 };
   renderRevCard();
 }
@@ -1930,6 +2063,7 @@ function renderRevCard() {
   if (card.type === 'cloze') renderClozeRev(main, card, pct);
   else if (card.type === 'code') renderCodeRev(main, card, pct);
   else if (card.type === 'cli') renderCliRev(main, card, pct);
+  else if (card.type === 'ayah') renderAyahRev(main, card, pct);
   else renderFlipRev(main, card, pct);
 }
 
@@ -2848,6 +2982,97 @@ function checkCliMatch(typed, card) {
     if (cliCommandsMatch(typed, a)) return a;
   }
   return null;
+}
+
+// ─── AYAH CONTINUATION REVIEW (tap-to-arrange tiles, no typing) ───────────────
+let ayahTiles = [];      // { word, placed }
+let ayahOrder = [];      // indices into ayahTiles, in the order tapped
+
+function shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+function renderAyahRev(main, card, pct) {
+  const words = (card.ayahWords || []).map((w, i) => ({ word: w, correctIdx: i, decoy: false }));
+  const decoys = (card.ayahDecoys || []).map(w => ({ word: w, correctIdx: -1, decoy: true }));
+  const shuffled = shuffleArr([...words, ...decoys]);
+  ayahTiles = shuffled;
+  ayahOrder = [];
+
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="ayah-prompt-box">
+      ${card.ayahRef ? `<div class="ayah-ref-label">${esc(card.ayahRef)}</div>` : ''}
+      <div class="ayah-arabic-text">${esc(card.ayahPrompt || '')}</div>
+    </div>
+    <div class="ayah-answer-row empty" id="ayah-answer-row"></div>
+    <div class="ayah-bank" id="ayah-bank"></div>
+    <div class="feedback-row" style="margin-top:2px;">
+      <span class="feedback" id="ayah-feedback"></span>
+    </div>
+    <button class="btn-check" id="ayah-check-btn" onclick="checkAyah()" style="margin-bottom:14px;">Check answer</button>
+    ${ratingHTML(card)}
+  </div>`;
+
+  renderAyahBank();
+  renderAyahAnswerRow();
+}
+
+function renderAyahBank() {
+  const bank = document.getElementById('ayah-bank');
+  if (!bank) return;
+  bank.innerHTML = ayahTiles.map((t, i) =>
+    `<span class="ayah-tile${ayahOrder.includes(i) ? ' placed' : ''}" onclick="tapAyahTile(${i})">${esc(t.word)}</span>`
+  ).join('');
+}
+
+function renderAyahAnswerRow() {
+  const row = document.getElementById('ayah-answer-row');
+  if (!row) return;
+  row.classList.toggle('empty', ayahOrder.length === 0);
+  row.innerHTML = ayahOrder.map(i =>
+    `<span class="ayah-tile" onclick="untapAyahTile(${i})">${esc(ayahTiles[i].word)}</span>`
+  ).join('');
+}
+
+function tapAyahTile(i) {
+  if (ayahOrder.includes(i)) return;
+  ayahOrder.push(i);
+  renderAyahBank();
+  renderAyahAnswerRow();
+}
+
+function untapAyahTile(i) {
+  ayahOrder = ayahOrder.filter(x => x !== i);
+  renderAyahBank();
+  renderAyahAnswerRow();
+}
+
+function checkAyah() {
+  const card = revQueue[revIdx];
+  const typedWords = ayahOrder.map(i => ayahTiles[i].word);
+  const ok = typedWords.length === (card.ayahWords || []).length &&
+    typedWords.every((w, i) => w === card.ayahWords[i]);
+
+  document.querySelectorAll('#ayah-answer-row .ayah-tile').forEach((el, pos) => {
+    const tileIdx = ayahOrder[pos];
+    const isCorrectHere = !ayahTiles[tileIdx].decoy && ayahTiles[tileIdx].correctIdx === pos;
+    el.classList.add(isCorrectHere ? 'correct-flash' : 'wrong-flash');
+  });
+
+  const fb = document.getElementById('ayah-feedback');
+  if (ok) {
+    fb.textContent = '✓ correct';
+    fb.className = 'feedback ok';
+  } else {
+    fb.textContent = '✗ incorrect — correct order: ' + (card.ayahWords || []).join(' ');
+    fb.className = 'feedback bad';
+  }
+
+  document.getElementById('ayah-check-btn').style.display = 'none';
+  document.getElementById('rating-grid').classList.add('show');
 }
 
 function renderCliRev(main, card, pct) {
