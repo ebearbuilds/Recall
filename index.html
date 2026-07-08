@@ -152,6 +152,15 @@
 
   /* CARD LIST */
   .card-list { display: flex; flex-direction: column; gap: 6px; }
+  .card-group { margin-bottom: 6px; }
+  .card-group-header { display: flex; align-items: center; gap: 8px; padding: 10px 4px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .card-group-header:hover .card-group-label { color: var(--text); }
+  .card-group-chevron { font-size: 10px; color: var(--text-faint); transition: transform 0.15s; flex-shrink: 0; }
+  .card-group-chevron.open { transform: rotate(90deg); }
+  .card-group-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+  .card-group-count { font-size: 11px; color: var(--text-faint); background: var(--bg-hover); padding: 1px 8px; border-radius: 10px; font-family: 'Space Mono', monospace; }
+  .card-group-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .card-group-body.collapsed { display: none; }
   .card-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: background 0.12s; }
   .card-row:hover { background: var(--bg-hover); }
   .card-type-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; font-family: 'Space Mono', monospace; padding: 3px 7px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
@@ -1156,6 +1165,7 @@ function selectDeck(id) {
   activeTagFilter = null; // reset filter when switching decks
   selectMode = false;
   selectedCardIds.clear();
+  deckSearchQuery = '';
   renderSidebar();
   renderDeckMain();
 }
@@ -1211,6 +1221,61 @@ function renderTagTree(tree, allCards, depth) {
   }).join('');
 }
 
+function cardSearchText(c) {
+  if (c.type === 'cloze') return (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1');
+  if (c.type === 'code') return (c.codePrompt || '') + ' ' + (c.codeAnswer || '');
+  if (c.type === 'cli') return (c.cliPrompt || '') + ' ' + (c.cliAnswers || []).join(' ');
+  if (c.type === 'ayah') return (c.ayahRef || '') + ' ' + (c.ayahPrompt || '') + ' ' + (c.ayahWords || []).join(' ');
+  return (c.front || '') + ' ' + (c.back || '');
+}
+
+let deckSearchQuery = '';
+let expandedTagGroups = new Set();
+
+function onDeckSearchInput(val) {
+  deckSearchQuery = val;
+  renderDeckMain();
+  const el = document.getElementById('deck-search-input');
+  if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+
+function toggleTagGroup(key) {
+  if (expandedTagGroups.has(key)) expandedTagGroups.delete(key);
+  else expandedTagGroups.add(key);
+  renderDeckMain();
+}
+
+function groupCardsByTopTag(cards) {
+  const groups = {};
+  cards.forEach(c => {
+    const tags = c.tags || [];
+    const key = tags.length ? tags[0].split('::')[0] : '__untagged__';
+    (groups[key] = groups[key] || []).push(c);
+  });
+  return groups;
+}
+
+function renderCardGroupsHTML(cards) {
+  const groups = groupCardsByTopTag(cards);
+  const keys = Object.keys(groups).filter(k => k !== '__untagged__').sort();
+  if (groups['__untagged__']) keys.push('__untagged__');
+  return keys.map(key => {
+    const groupCards = groups[key];
+    const label = key === '__untagged__' ? 'Untagged' : key;
+    const collapsed = !expandedTagGroups.has(key);
+    return `<div class="card-group">
+      <div class="card-group-header" onclick="toggleTagGroup('${esc(key)}')">
+        <span class="card-group-chevron${collapsed ? '' : ' open'}">▶</span>
+        <span class="card-group-label">${esc(label)}</span>
+        <span class="card-group-count">${groupCards.length}</span>
+      </div>
+      <div class="card-group-body${collapsed ? ' collapsed' : ''}">
+        ${groupCards.map(c => cardRow(c)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderDeckMain() {
   const deck = state.decks.find(d => d.id === activeDeckId);
   if (!deck) return;
@@ -1220,10 +1285,15 @@ function renderDeckMain() {
   const main = document.getElementById('main-area');
   const tags = getDeckTags(activeDeckId);
 
-  const visibleCards = activeTagFilter
+  let visibleCards = activeTagFilter
     ? allCards.filter(c => tagMatches(c.tags, activeTagFilter))
     : allCards;
   const visibleDue = visibleCards.filter(c => c.due <= Date.now()).length;
+
+  const q = deckSearchQuery.trim().toLowerCase();
+  if (q) visibleCards = visibleCards.filter(c => cardSearchText(c).toLowerCase().includes(q));
+
+  const showGroups = !activeTagFilter && !selectMode && !q && visibleCards.some(c => (c.tags || []).length > 0);
 
   const tagFilterRow = tags.length > 0 ? `
     <div class="tag-filter-row">
@@ -1252,12 +1322,13 @@ function renderDeckMain() {
           <button class="btn-secondary" onclick="deleteDeck('${activeDeckId}')">Delete</button>
         </div>
       </div>
+      <input class="text-input" id="deck-search-input" type="text" placeholder="Search cards in this deck…" value="${esc(deckSearchQuery)}" oninput="onDeckSearchInput(this.value)" style="max-width:340px;" />
       ${tagFilterRow}
       ${selectMode ? bulkTagBarHTML(visibleCards) : ''}
       <div class="card-list">
         ${visibleCards.length === 0
-          ? `<div class="empty-state"><div class="empty-title">No cards${activeTagFilter ? ' with this tag' : ' yet'}</div><div>${activeTagFilter ? 'Try a different tag or clear the filter.' : 'Add your first card to start practising.'}</div></div>`
-          : visibleCards.map(c => cardRow(c)).join('')}
+          ? `<div class="empty-state"><div class="empty-title">No cards${q ? ' matching your search' : activeTagFilter ? ' with this tag' : ' yet'}</div><div>${q ? 'Try a different search term.' : activeTagFilter ? 'Try a different tag or clear the filter.' : 'Add your first card to start practising.'}</div></div>`
+          : showGroups ? renderCardGroupsHTML(visibleCards) : visibleCards.map(c => cardRow(c)).join('')}
       </div>
     </div>`;
 }
