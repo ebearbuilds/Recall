@@ -51,8 +51,9 @@
   .app-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 57px); }
 
   /* SIDEBAR */
-  .sidebar { border-right: 1px solid var(--border); padding: 12px 0 20px; display: flex; flex-direction: column; overflow-y: auto; }
-  .sidebar-bottom { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+  .sidebar { border-right: 1px solid var(--border); padding: 12px 0 20px; display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-decks { flex: 1; overflow-y: auto; min-height: 0; }
+  .sidebar-bottom { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; border-top: 1px solid var(--border); }
   .sidebar-add-btn { background: none; border: 1px dashed var(--border); color: var(--text-faint); font-family: 'Space Grotesk', sans-serif; font-size: 12px; padding: 7px 0; cursor: pointer; border-radius: 2px; transition: all 0.15s; width: 100%; }
   .sidebar-add-btn:hover { border-color: var(--border-strong); color: var(--text-muted); }
 
@@ -580,7 +581,9 @@
 <div class="app-layout">
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <div id="deck-list"></div>
+    <div class="sidebar-decks">
+      <div id="deck-list"></div>
+    </div>
     <div class="sidebar-bottom">
       <button class="sidebar-add-btn" onclick="openDeckModal()">+ New deck</button>
       <button class="sidebar-add-btn" onclick="openFolderModal()">+ New folder</button>
