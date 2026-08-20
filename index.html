@@ -38,6 +38,56 @@
     --accent-dim: var(--green-dim);
   }
 
+  /* ── DARK PAPER: same warm-neutral system, inked instead of bleached ── */
+  body.dark {
+    --bg: #1c1a16;
+    --bg-card: #242019;
+    --bg-hover: #2c271e;
+    --border: rgba(247,242,233,0.1);
+    --border-strong: rgba(247,242,233,0.2);
+    --text: #f2ede2;
+    --text-muted: #a89b87;
+    --text-faint: #6f6555;
+    --ink-on-accent: #1c1a16;
+    --scrim: 10,9,7;
+    --green: #9db67a;
+    --green-dim: rgba(157,182,122,0.16);
+    --blue: #82abc9;
+    --blue-dim: rgba(130,171,201,0.16);
+    --purple: #c793b3;
+    --purple-dim: rgba(199,147,179,0.16);
+    --coral: #e0916a;
+    --coral-dim: rgba(224,145,106,0.16);
+    --red: #dd8367;
+    --red-dim: rgba(221,131,103,0.16);
+  }
+  body.dark { background-image: radial-gradient(circle at 1px 1px, rgba(247,242,233,0.035) 1px, transparent 0); background-size: 22px 22px; }
+  /* the handful of rules below use literal colors rather than the variables above, so they need explicit dark overrides */
+  body.dark .type-cli { background: rgba(224,168,90,0.16); color: #e0a85a; }
+  body.dark .type-ayah { background: rgba(247,242,233,0.08); color: #d9b06a; }
+  body.dark .card-row-front code,
+  body.dark .flip-content code,
+  body.dark .cloze-display code { background: rgba(247,242,233,0.08); }
+  body.dark .ayah-prompt-box,
+  body.dark .code-prompt-box { background: rgba(247,242,233,0.04); }
+  body.dark .fs-defer-item { background: rgba(247,242,233,0.03); }
+  body.dark .flip-back { background: rgba(157,182,122,0.07); border-color: rgba(157,182,122,0.3); }
+  body.dark .card-row { box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+  body.dark .card-row:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+  body.dark .modal { box-shadow: 0 24px 60px rgba(0,0,0,0.55); }
+  body.dark .session-box,
+  body.dark .flip-front, body.dark .flip-back { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  body.dark .deck-item.active { box-shadow: inset 0 0 0 1px rgba(247,242,233,0.06); }
+  body.dark .btn-add, body.dark .btn-save, body.dark .btn-check { box-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+
+  /* theme toggle button */
+  .theme-toggle-btn {
+    display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+    background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; font-size: 15px; line-height: 1;
+  }
+  .theme-toggle-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
   body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; font-size: 15px; line-height: 1.6; background-image: radial-gradient(circle at 1px 1px, rgba(58,48,38,0.05) 1px, transparent 0); background-size: 22px 22px; }
 
   /* NAV */
@@ -92,13 +142,13 @@
   /* card links */
   .card-link {
     display: inline-flex; align-items: center; gap: 4px;
-    background: var(--blue-dim); color: var(--blue);
-    border: 1px solid rgba(95,132,163,0.3); border-radius: 8px;
+    background: rgba(27,188,254,0.1); color: var(--blue);
+    border: 1px solid rgba(27,188,254,0.3); border-radius: 8px;
     padding: 1px 7px; font-size: 12px; cursor: pointer;
     font-family: 'Space Grotesk', sans-serif; transition: all 0.12s;
     vertical-align: middle; text-decoration: none;
   }
-  .card-link:hover { background: rgba(95,132,163,0.2); border-color: var(--blue); }
+  .card-link:hover { background: rgba(27,188,254,0.2); border-color: var(--blue); }
   .card-link::before { content: '↗'; font-size: 10px; opacity: 0.7; }
   /* external links */
   .ext-link { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
@@ -168,8 +218,8 @@
   .card-type-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; font-family: 'Space Mono', monospace; padding: 3px 7px; border-radius: 8px; flex-shrink: 0; margin-top: 2px; }
   .type-basic { background: var(--blue-dim); color: var(--blue); }
   .type-cloze { background: var(--purple-dim); color: var(--purple); }
-  .type-code { background: var(--green-dim); color: var(--green); }
-  .type-cli { background: rgba(181,101,29,0.12); color: #9a5a1a; }
+  .type-code { background: rgba(10,207,131,0.1); color: var(--green); }
+  .type-cli { background: rgba(240,136,62,0.12); color: #f0883e; }
   .type-ayah { background: rgba(58,48,38,0.08); color: #9c6b2e; }
 
   /* Ayah continuation — tap-to-arrange word tiles */
@@ -304,7 +354,7 @@
     min-height: 180px; line-height: 1.7; transition: all 0.15s; margin-bottom: 16px;
   }
   .editor-ta:focus { border-color: var(--accent); }
-  .cloze-hint { background: var(--purple-dim); border: 1px solid rgba(160,106,140,0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.7; }
+  .cloze-hint { background: var(--purple-dim); border: 1px solid rgba(162,89,255,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.7; }
   .cloze-hint code { font-family: 'Space Mono', monospace; color: var(--purple); }
   /* live bullet preview strip */
   .bullet-hint { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-top: -12px; margin-bottom: 10px; }
@@ -365,7 +415,7 @@
   .review-counter { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 
   .flip-front, .flip-back { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 28px 32px; background: var(--bg-card); margin-bottom: 14px; }
-  .flip-back { background: rgba(124,143,92,0.05); border-color: rgba(124,143,92,0.3); display: none; }
+  .flip-back { background: rgba(10,207,131,0.03); border-color: rgba(10,207,131,0.2); display: none; }
   .flip-back.show { display: block; }
   .flip-face-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-faint); font-family: 'Space Mono', monospace; margin-bottom: 12px; }
   .flip-content { font-size: 17px; line-height: 1.75; }
@@ -579,6 +629,7 @@
     Recall
   </div>
   <div class="nav-right">
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppTheme()" title="Toggle dark mode">🌙</button>
     <button class="focus-btn" id="focus-nav-btn" onclick="handleFocusNavClick()">
       <span class="focus-dot"></span>
       <span id="focus-nav-label">Focus</span>
@@ -3346,10 +3397,28 @@ function checkCodeFull() {
   document.getElementById('rating-grid').classList.add('show');
 }
 
+// ─── APP THEME (light/dark paper) ──────────────────────────────────────────
+const THEME_KEY = 'recall_app_theme';
+function setAppTheme(mode) {
+  document.body.classList.toggle('dark', mode === 'dark');
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = mode === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem(THEME_KEY, mode);
+}
+function toggleAppTheme() {
+  setAppTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
+}
+function loadAppTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const mode = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setAppTheme(mode);
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderSidebar();
 setupCEKeydown();
 loadCodeTheme();
+loadAppTheme();
 </script>
 <!-- FOCUS SETUP MODAL -->
 <div class="focus-overlay" id="focus-overlay" onclick="if(event.target===this)closeFocusModal()">
