@@ -2226,6 +2226,7 @@ function progressHTML(pct) {
       <button class="fs-btn${sz==='lg'?' active':''}" onclick="setCardFontSize('lg')" title="Large text" style="font-size:16px;">A</button>
     </div>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="editCurrentCard()">Edit</button>
+    <button class="btn-secondary" id="rev-del-btn" style="font-size:12px;padding:5px 12px;" onclick="deleteCurrentCard()">Delete</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="skipCard()">Skip</button>
     <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="endReview()">End</button>
   </div>`;
@@ -2289,6 +2290,37 @@ function setCardFontSize(sz) {
   document.querySelectorAll('.fs-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${sz}'`));
   });
+}
+
+function deleteCurrentCard() {
+  const card = revQueue[revIdx];
+  if (!card) return;
+  const btn = document.getElementById('rev-del-btn');
+
+  // first click: ask for confirmation (same "Sure?" pattern as the deck list)
+  if (btn && btn.dataset.confirm !== 'true') {
+    btn.dataset.confirm = 'true';
+    btn.textContent = 'Sure?';
+    btn.style.borderColor = 'var(--red)';
+    btn.style.color = 'var(--red)';
+    setTimeout(() => {
+      if (btn.isConnected && btn.dataset.confirm === 'true') {
+        btn.dataset.confirm = '';
+        btn.textContent = 'Delete';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }
+    }, 3000);
+    return;
+  }
+
+  // second click: actually delete, then move on to the next card
+  state.cards = state.cards.filter(c => c.id !== card.id);
+  revQueue.splice(revIdx, 1); // don't increment revIdx, the next card slides into place
+  save();
+  renderSidebar();            // refresh the due counts
+  document.onkeydown = null;
+  renderRevCard();
 }
 
 function skipCard() {
