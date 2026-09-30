@@ -815,12 +815,12 @@
 <!-- FOLDER MODAL -->
 <div class="overlay" id="folder-overlay" onclick="if(event.target===this)closeFolderModal()" style="z-index:250;">
   <div class="modal modal-sm">
-    <div class="modal-title">New folder</div>
+    <div class="modal-title" id="folder-modal-title">New folder</div>
     <div class="field-label">Folder name</div>
     <input class="text-input" id="folder-name-input" type="text" placeholder="e.g. Security, SWE, Islam..." />
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeFolderModal()">Cancel</button>
-      <button class="btn-save" onclick="saveFolder()">Create folder</button>
+      <button class="btn-save" id="folder-save-btn" onclick="saveFolder()">Create folder</button>
     </div>
   </div>
 </div>
@@ -1196,6 +1196,7 @@ function renderSidebar() {
         ${folderDecks.map(d => deckItemHTML(d)).join('')}
         <div style="padding:3px 20px 6px 32px;display:flex;gap:10px;">
           <button style="background:none;border:none;color:var(--text-faint);font-size:11px;cursor:pointer;font-family:Inter,sans-serif;padding:0;" onclick="openDeckModalInFolder('${folder.id}')">+ deck</button>
+          <button style="background:none;border:none;color:var(--text-faint);font-size:11px;cursor:pointer;font-family:Inter,sans-serif;padding:0;" onclick="openRenameFolderModal('${folder.id}')">rename</button>
           <button style="background:none;border:none;color:var(--text-faint);font-size:11px;cursor:pointer;font-family:Inter,sans-serif;padding:0;" onclick="deleteFolder('${folder.id}')">delete</button>
         </div>
       </div>
@@ -1511,11 +1512,27 @@ function cardRow(c) {
 }
 
 // ─── FOLDER CRUD ──────────────────────────────────────────────────────────────
+let editingFolderId = null;
 function openFolderModal() {
+  editingFolderId = null;
+  document.getElementById('folder-modal-title').textContent = 'New folder';
+  document.getElementById('folder-save-btn').textContent = 'Create folder';
   document.getElementById('folder-name-input').value = '';
   document.getElementById('folder-overlay').classList.add('open');
   setTimeout(() => document.getElementById('folder-name-input').focus(), 50);
   document.getElementById('folder-name-input').onkeydown = e => { if (e.key === 'Enter') saveFolder(); };
+}
+function openRenameFolderModal(id) {
+  const f = state.folders.find(x => x.id === id);
+  if (!f) return;
+  editingFolderId = id;
+  document.getElementById('folder-modal-title').textContent = 'Rename folder';
+  document.getElementById('folder-save-btn').textContent = 'Save';
+  const input = document.getElementById('folder-name-input');
+  input.value = f.name;
+  document.getElementById('folder-overlay').classList.add('open');
+  setTimeout(() => { input.focus(); input.select(); }, 50);
+  input.onkeydown = e => { if (e.key === 'Enter') saveFolder(); };
 }
 function closeFolderModal() { document.getElementById('folder-overlay').classList.remove('open'); }
 
@@ -1570,6 +1587,15 @@ function generateSurahCards() {
 function saveFolder() {
   const name = document.getElementById('folder-name-input').value.trim();
   if (!name) return;
+  if (editingFolderId) {
+    const f = state.folders.find(x => x.id === editingFolderId);
+    if (f) f.name = name;
+    editingFolderId = null;
+    save(); closeFolderModal(); renderSidebar();
+    // refresh the folder name shown above the deck title, but never clobber an in-progress review
+    if (activeDeckId && !document.getElementById('rev-del-btn')) renderDeckMain();
+    return;
+  }
   state.folders.push({ id: 'folder_' + Date.now(), name, collapsed: false });
   save(); closeFolderModal(); renderSidebar();
 }
