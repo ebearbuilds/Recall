@@ -874,6 +874,10 @@
   .fsp-mode { font-weight: 900; text-transform: uppercase; letter-spacing: 0.6px; }
   .fs-history-item { border-bottom: 2px solid var(--edge); }
 
+
+  /* BOLD FIX: body text was 700 while the base theme's bold rules were 600, so **bold** looked lighter than normal text */
+  .flip-content, .cloze-display, .card-row-front, .lcm-back, .card-row-front { font-weight: 600; }
+  .flip-content b, .cloze-display b, .card-row-front b, .lcm-back b, .lcm-front b, b, strong { font-weight: 900; }
 </style>
 </head>
 <body>
