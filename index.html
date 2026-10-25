@@ -892,6 +892,88 @@
   .home-sub .due { color: var(--spot); font-weight: 800; }
   body:not(.dark) .home-sub .due { color: var(--accent); }
 
+
+  /* ═══ SCALE-DOWN PASS: tighter sizes so everything fits a normal browser window ═══ */
+  body { font-size: 13px; }
+  nav { height: 56px; padding: 0 12px 0 16px; }
+  .app-layout { height: calc(100vh - 56px); grid-template-columns: 252px minmax(0, 1fr); gap: 6px; padding: 0 6px 6px; }
+  nav .nav-logo { gap: 8px; }
+  nav .nav-logo svg.logo-mark { width: 28px; height: 28px; }
+  .logo-word { font-size: 20px; }
+  .nav-right { gap: 4px; flex-wrap: nowrap; }
+  nav .theme-toggle-btn { width: 30px; height: 30px; font-size: 13px; }
+  nav .focus-btn { font-size: 12px; padding: 6px 12px; }
+  nav .text-input { font-size: 12px !important; padding: 6px 10px !important; }
+  nav .btn-secondary { font-size: 12px !important; padding: 6px 9px !important; }
+  nav .btn-add { font-size: 12px; padding: 7px 14px; }
+  body:not(.zz) .due-pill { font-size: 11px; padding: 3px 9px; }
+
+  .btn-add, .btn-secondary, .btn-save, .btn-cancel, .btn-check, .fsp-end-btn { font-size: 13px; padding: 8px 18px; }
+  .type-btn, .dur-btn { font-size: 12px; padding: 6px 13px; }
+  body:not(.zz) .flip-btn { padding: 13px; font-size: 14px; margin-bottom: 14px; }
+
+  /* sidebar */
+  .sidebar-decks::before { font-size: 14px; padding: 14px 16px 6px; }
+  .folder-row { padding: 8px 16px 3px; }
+  .folder-name { font-size: 11px; }
+  .deck-item { padding: 6px 8px; gap: 10px; margin: 0 6px; }
+  .deck-item::before { width: 36px; height: 36px; }
+  .deck-item-name { font-size: 13px; }
+  .deck-item-count { font-size: 12px; }
+  .sidebar-add-btn { font-size: 12px; padding: 6px 12px; }
+
+  /* main */
+  #main-area { overflow-x: hidden; }
+  .main { padding: 20px 24px 56px; }
+  .deck-header { flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; margin-bottom: 16px; }
+  .deck-header::before { width: 96px; height: 96px; }
+  .deck-header > div:first-child { flex: 1 1 240px; min-width: 0; }
+  .deck-actions { flex-basis: 100%; justify-content: flex-start; margin-top: 0; gap: 6px; }
+  .deck-title { font-size: 34px; }
+  .deck-meta { font-size: 12px; margin-top: 6px; }
+  body:not(.zz) #deck-search-input { padding: 9px 16px; max-width: 300px; font-size: 13px; }
+  .tag-filter-row { gap: 5px; margin-bottom: 12px; }
+  .tag-pill { font-size: 12px; padding: 5px 11px; }
+  .card-tags-row .tag-pill { font-size: 10px; padding: 1px 8px; }
+  .card-group-label { font-size: 15px; }
+  .card-row { padding: 8px 12px; }
+  .card-row-front { font-size: 14px; }
+  .card-type-badge { font-size: 10px; padding: 2px 8px; }
+  .no-deck, .home-wrap { padding: 20px 24px 56px; }
+  .no-deck-title { font-size: 26px; }
+  .empty-title { font-size: 18px; }
+
+  /* modals */
+  .modal, .focus-modal, .focus-summary, .linked-card-modal { padding: 22px; }
+  .modal-title, .focus-modal-title { font-size: 20px; margin-bottom: 16px; }
+  body:not(.zz) .text-input, body:not(.zz) .editor-ta, body:not(.zz) .type-input,
+  body:not(.zz) .recall-input, body:not(.zz) .focus-topic-input, body:not(.zz) .focus-deck-select { padding: 9px 12px; font-size: 13px; }
+  .field-label, .focus-label { font-size: 12px; }
+
+  /* review */
+  .review-wrap { padding: 22px 28px; }
+  body:not(.zz) .flip-front { padding: 26px 30px; }
+  body:not(.zz) .flip-back { padding: 24px 30px; }
+  .session-box, .code-prompt-box, .ayah-prompt-box { padding: 24px 28px; }
+  .flip-content, .cloze-display { font-size: 18px; }
+  .flip-face-label, .session-label, .code-prompt-label { font-size: 11px; }
+  body:not(.zz) .rating-btn { padding: 11px 6px; }
+  .rl { font-size: 13px; }
+  .ri { font-size: 10px; }
+  .rc-title { font-size: 40px; }
+  .rc-stat-num { font-size: 32px; }
+  .fsp-time { font-size: 30px; }
+
+  /* home tiles */
+  .home-greet { font-size: 26px; }
+  .home-sub-line { font-size: 13px; margin-bottom: 20px; }
+  .home-section { font-size: 18px; margin-bottom: 10px; }
+  .home-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .home-tile { padding: 12px; }
+  .home-art { margin-bottom: 10px; }
+  .home-play { width: 40px; height: 40px; font-size: 14px; }
+  .home-name { font-size: 14px; }
+  .home-sub { font-size: 12px; }
 </style>
 </head>
 <body>
