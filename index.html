@@ -1139,6 +1139,45 @@
   /* wider review card for long notes */
   body .review-wrap { max-width: min(1040px, 96%) !important; width: 100%; box-sizing: border-box; }
   body .flip-content, body .cloze-display { max-width: none; }
+
+  /* ════════════ VISUAL: more gradient, Notion-style deck pages ════════════ */
+  body.dark #main-area { background: radial-gradient(900px 520px at 88% -8%, rgba(110,120,255,.16), transparent 62%), radial-gradient(760px 520px at -4% 108%, rgba(60,220,170,.11), transparent 62%), radial-gradient(600px 400px at 50% 40%, rgba(255,150,200,.05), transparent 70%), #000; }
+  body:not(.dark) #main-area { background: radial-gradient(900px 520px at 88% -8%, rgba(120,130,255,.14), transparent 62%), radial-gradient(760px 520px at -4% 108%, rgba(80,210,170,.12), transparent 62%), #fff; }
+  .ol-hero em { background: linear-gradient(90deg, #9fe0ff, #c8b8ff 50%, #ffc2d9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ol-card:hover .ol-art { box-shadow: 0 18px 50px -12px rgba(140,150,255,.45); }
+  .ol-art { transition: box-shadow .3s; }
+  .nt-cover { height: 230px; position: relative; overflow: hidden; margin: 0 0 -6px; }
+  .nt-cover svg { width: 100%; height: 100%; display: block; }
+  .nt-cover::after { content: ''; position: absolute; inset: auto 0 0 0; height: 70px; background: linear-gradient(transparent, var(--bg)); opacity: .55; }
+  #main-area:has(.nt-cover) { padding-top: 0; }
+  .nt-ico { width: 84px; height: 84px; border-radius: 20px; margin: -54px 0 16px; position: relative; z-index: 2; border: 5px solid var(--bg); box-shadow: 0 10px 30px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 500; letter-spacing: -0.04em; color: rgba(0,0,0,.72); }
+  .deck-header > div:first-child { flex: 1; min-width: 260px; }
+  .deck-title { font-size: 46px; font-weight: 500; letter-spacing: -0.05em; line-height: 1.05; }
+  .deck-meta { display: none; }
+  .deck-header div[style*="letter-spacing:0.08em"] { display: none; }
+  .nt-props { display: grid; gap: 2px; margin: 8px 0 26px; max-width: 520px; font-size: 14.5px; }
+  .nt-p { display: grid; grid-template-columns: 130px 1fr; gap: 10px; padding: 7px 8px; border-radius: 8px; align-items: center; }
+  .nt-p:hover { background: var(--fill); }
+  .nt-p .k { color: var(--text-muted); } .nt-p .v { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .nt-chip { border-radius: 999px; padding: 1px 11px; font-size: 13px; color: #111; }
+  .nt-th { width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+  body:not(.dark) .nt-th { box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+  .card-row { border-radius: 16px; transition: box-shadow .2s, border-color .2s; }
+  .card-row:hover { box-shadow: 0 10px 30px -14px rgba(140,150,255,.5); }
+  .nt-sq { width: 18px; height: 18px; border-radius: 6px; flex-shrink: 0; }
+  .deck-item { display: flex; align-items: center; gap: 10px; }
+  .deck-item-name { flex: 1; min-width: 0; }
+  .review-wrap { position: relative; }
+  body:not(.zz) .flip-front, .session-box { background: linear-gradient(135deg, rgba(150,170,255,.16), rgba(255,170,210,.08) 55%, rgba(110,230,200,.1)); border: 1px solid var(--border); }
+  body:not(.zz) .flip-back { background: linear-gradient(135deg, rgba(120,230,200,.14), rgba(140,170,255,.12)); border: 1px solid var(--border); }
+  .review-strip-fill, .fsp-fill-focus { background: linear-gradient(90deg,#9fe0ff,#c8b8ff,#ffc2d9) !important; }
+  body:not(.zz) .rating-btn { background: var(--bg-card); }
+  body:not(.zz) .rating-btn.r-again:hover { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #111; } body:not(.zz) .rating-btn.r-hard:hover { background: linear-gradient(135deg, #ffd89b, #fff1b8); }
+  body:not(.zz) .rating-btn.r-good:hover { background: linear-gradient(135deg, #8fe8c0, #c9f7a8); } body:not(.zz) .rating-btn.r-easy:hover { background: linear-gradient(135deg, #8fd3ff, #c3b8ff); }
+  body:not(.zz) .rating-btn:hover * { color: #111 !important; }
+
+  .deck-item.active { border: 0 !important; box-shadow: none !important; outline: 0; background: var(--fill-hover); }
+  body.dark #main-area { background: radial-gradient(900px 520px at 88% -8%, rgba(110,120,255,.26), transparent 62%), radial-gradient(760px 520px at -4% 108%, rgba(60,220,170,.18), transparent 62%), radial-gradient(600px 400px at 50% 40%, rgba(255,150,200,.08), transparent 70%), #000; }
 </style>
 </head>
 <body>
@@ -3978,7 +4017,7 @@ function checkCodeFull() {
 }
 
 // ─── APP THEME (light/dark) ──────────────────────────────────────────────
-const THEME_KEY = 'recall_app_theme_openaisite';
+const THEME_KEY = 'recall_app_theme_meno_visual';
 function setAppTheme(mode) {
   document.body.classList.toggle('dark', mode === 'dark');
   const btn = document.getElementById('theme-toggle-btn');
@@ -4095,6 +4134,59 @@ function olText(c) {
     : (c.front || c.codePrompt || c.cliPrompt || c.ayahPrompt || '');
   return String(t).replace(/<[^>]+>/g, ' ').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim() || '(empty card)';
 }
+
+function ntGradWide(seed) {
+  const r = olRnd(seed), p = OL_P[Math.floor(r() * OL_P.length)];
+  const pt = (a, b) => `${Math.floor(a + r() * b)}% ${Math.floor(10 + r() * 80)}%`;
+  return `background:radial-gradient(ellipse 38% 140% at ${pt(0, 25)},${p[1]},transparent),radial-gradient(ellipse 34% 150% at ${pt(25, 25)},${p[2]},transparent),radial-gradient(ellipse 36% 140% at ${pt(50, 25)},${p[3]},transparent),radial-gradient(ellipse 40% 150% at ${pt(75, 25)},${p[1]},transparent),${p[0]}`;
+}
+function ntGrad(seed) {
+  const r = olRnd(seed), p = OL_P[Math.floor(r() * OL_P.length)];
+  const pt = () => `${Math.floor(r() * 100)}% ${Math.floor(r() * 100)}%`;
+  return `background:radial-gradient(at ${pt()},${p[1]} 0,transparent 68%),radial-gradient(at ${pt()},${p[2]} 0,transparent 62%),radial-gradient(at ${pt()},${p[3]} 0,transparent 58%),${p[0]}`;
+}
+const _rds = renderSidebar;
+renderSidebar = function () {
+  _rds.apply(this, arguments);
+  document.querySelectorAll('.deck-item').forEach(el => {
+    const m = /selectDeck\('([^']+)'\)/.exec(el.getAttribute('onclick') || '');
+    if (!m || el.querySelector('.nt-sq')) return;
+    const d = state.decks.find(x => x.id === m[1]); if (!d) return;
+    const sq = document.createElement('span'); sq.className = 'nt-sq'; sq.setAttribute('style', ntGrad(d.id + d.name));
+    el.insertBefore(sq, el.firstChild);
+  });
+};
+const _rcr = cardRow;
+cardRow = function (c) {
+  return _rcr(c).replace('<span class="card-type-badge', `<span class="nt-th" style="${ntGrad(c.id)}"></span><span class="card-type-badge`);
+};
+const _rdm = renderDeckMain;
+renderDeckMain = function () {
+  _rdm.apply(this, arguments);
+  const deck = state.decks.find(d => d.id === activeDeckId); if (!deck) return;
+  const area = document.getElementById('main-area'); const main = area.querySelector('.main'); if (!main) return;
+  area.querySelectorAll('.nt-cover').forEach(e => e.remove());
+  const cover = document.createElement('div'); cover.className = 'nt-cover'; cover.setAttribute('style', ntGradWide(deck.id + deck.name + 'cover'));
+  area.insertBefore(cover, main);
+  const cs = state.cards.filter(c => c.deckId === deck.id), now = Date.now();
+  const dd = cs.filter(c => c.due <= now).length;
+  const f = deck.folderId ? state.folders.find(x => x.id === deck.folderId) : null;
+  const next = cs.length ? Math.min(...cs.map(c => c.due)) : null;
+  const types = [...new Set(cs.map(c => c.type || 'basic'))];
+  const r = olRnd(deck.id + deck.name), p = OL_P[Math.floor(r() * OL_P.length)];
+  const hdr = main.querySelector('.deck-header > div'); if (!hdr) return;
+  const ico = document.createElement('div'); ico.className = 'nt-ico'; ico.setAttribute('style', ntGrad(deck.id + deck.name + 'i')); ico.textContent = (deck.name || '?').trim().charAt(0).toUpperCase();
+  hdr.insertBefore(ico, hdr.firstChild);
+  const fmt = t => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const chip = (t, c) => `<span class="nt-chip" style="background:${c}">${esc(t)}</span>`;
+  const props = document.createElement('div'); props.className = 'nt-props';
+  props.innerHTML = `<div class="nt-p"><span class="k">Cards</span><span class="v">${cs.length}</span></div>
+    <div class="nt-p"><span class="k">Due</span><span class="v">${dd ? chip(dd + ' due now', p[1]) : chip('Up to date', p[3])}</span></div>
+    <div class="nt-p"><span class="k">Next review</span><span class="v">${next ? (next <= now ? 'Now' : fmt(next)) : '—'}</span></div>
+    ${f ? `<div class="nt-p"><span class="k">Folder</span><span class="v">${chip(f.name, p[2])}</span></div>` : ''}
+    ${types.length ? `<div class="nt-p"><span class="k">Types</span><span class="v">${types.map(t => chip(t, p[0])).join('')}</span></div>` : ''}`;
+  main.querySelector('.deck-header').insertAdjacentElement('afterend', props);
+};
 function renderHome() {
   activeDeckId = null; selectMode = false; selectedCardIds.clear(); document.onkeydown = null;
   renderSidebar();
