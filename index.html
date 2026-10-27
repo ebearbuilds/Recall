@@ -1178,6 +1178,37 @@
 
   .deck-item.active { border: 0 !important; box-shadow: none !important; outline: 0; background: var(--fill-hover); }
   body.dark #main-area { background: radial-gradient(900px 520px at 88% -8%, rgba(110,120,255,.26), transparent 62%), radial-gradient(760px 520px at -4% 108%, rgba(60,220,170,.18), transparent 62%), radial-gradient(600px 400px at 50% 40%, rgba(255,150,200,.08), transparent 70%), #000; }
+
+/* ── Meno Visual 2 ── */
+.rv-aura{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.22;filter:blur(70px) saturate(1.3);transform:scale(1.15);animation:auraIn .9s ease both}
+body:not(.dark) .rv-aura{opacity:.3}
+@keyframes auraIn{from{opacity:0}}
+.review-wrap{position:relative;z-index:1}
+.feedback.ok.pop{display:inline-block;padding:5px 14px;border-radius:999px;color:#fff;background:linear-gradient(90deg,#10a37f,#5b8cff,#b06bff);background-size:200% 100%;animation:fbIn .5s cubic-bezier(.2,1.4,.4,1) both,fbSlide 2s linear infinite}
+.feedback.bad.pop{display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,80,80,.14);animation:fbIn .35s ease both}
+@keyframes fbIn{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+@keyframes fbSlide{to{background-position:200% 0}}
+.shake{animation:shk .38s ease}
+@keyframes shk{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.session-box.flash-ok{animation:flOk .7s ease}
+@keyframes flOk{0%{box-shadow:0 0 0 0 rgba(16,163,127,.7)}100%{box-shadow:0 0 0 26px rgba(16,163,127,0)}}
+.mv-wide{display:grid;grid-template-columns:1.1fr 1fr;gap:20px}
+@media(max-width:900px){.mv-wide{grid-template-columns:1fr}}
+.mv-box{border:1px solid var(--border);border-radius:18px;padding:22px;background:var(--bg-card);position:relative;overflow:hidden}
+.mv-box h3{font-size:13px;font-weight:600;color:var(--text-muted);margin:0 0 14px;letter-spacing:.02em}
+.mv-today{color:#fff;border:0;display:flex;flex-direction:column;justify-content:space-between;min-height:190px}
+.mv-today .big{font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.mv-today .sub{opacity:.85;font-size:14px;margin-top:6px}
+.mv-today button{align-self:flex-start;border:0;border-radius:999px;background:#fff;color:#000;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
+.mv-today:before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.18)}
+.mv-today>*{position:relative}
+.mv-heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:4px}
+.mv-heat i{aspect-ratio:1;border-radius:4px;background:var(--fill);min-width:8px}
+.mv-cap{font-size:12px;color:var(--text-faint);margin-top:10px}
+.mv-fc{display:flex;align-items:flex-end;gap:6px;height:110px}
+.mv-fc div{flex:1;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#b06bff,#5b8cff 60%,#10a37f);min-height:3px;opacity:.9;position:relative}
+.mv-fc div:first-child{outline:2px solid var(--text);outline-offset:1px}
+.mv-fcl{display:flex;gap:6px;margin-top:6px;font-size:10px;color:var(--text-faint)}.mv-fcl span{flex:1;text-align:center}
 </style>
 </head>
 <body>
@@ -4017,7 +4048,7 @@ function checkCodeFull() {
 }
 
 // ─── APP THEME (light/dark) ──────────────────────────────────────────────
-const THEME_KEY = 'recall_app_theme_meno_visual';
+const THEME_KEY = 'recall_app_theme_meno_visual2';
 function setAppTheme(mode) {
   document.body.classList.toggle('dark', mode === 'dark');
   const btn = document.getElementById('theme-toggle-btn');
@@ -4210,6 +4241,60 @@ function renderHome() {
     ${cards ? `<div class="ol-sec"><div class="ol-head"><h2>Due now</h2><a onclick="startReview(false)">View all</a></div><div class="ol-grid">${cards}</div></div>` : ''}
   </div>`;
 }
+renderHome();
+
+// ── Meno Visual 2 ──
+const MV_LOG='meno_revlog_v1';
+function mvDay(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function mvLog(){try{return JSON.parse(localStorage.getItem(MV_LOG)||'{}')}catch(e){return {}}}
+const _rate=rateCard;
+rateCard=function(r){try{const l=mvLog(),k=mvDay(Date.now());l[k]=(l[k]||0)+1;localStorage.setItem(MV_LOG,JSON.stringify(l));}catch(e){}return _rate.apply(this,arguments);};
+const _rrc=renderRevCard;
+renderRevCard=function(){
+  _rrc.apply(this,arguments);
+  const main=document.getElementById('main-area'),c=revQueue[revIdx];if(!main||!c)return;
+  const old=document.getElementById('rv-aura');if(old)old.remove();
+  const d=state.decks.find(x=>x.id===c.deckId);
+  const a=document.createElement('div');a.id='rv-aura';a.className='rv-aura';a.style.cssText=ntGrad((d&&d.id||c.deckId)+(d&&d.name||''));
+  document.body.appendChild(a);
+};
+['renderHome','renderDeckMain','renderRevComplete'].forEach(()=>{});
+const _fn=new MutationObserver(()=>{const a=document.getElementById('rv-aura');if(a&&!document.querySelector('.review-wrap'))a.remove();});
+_fn.observe(document.getElementById('main-area'),{childList:true});
+const _cc=checkCloze;
+checkCloze=function(){
+  const i=clozeBlankIdx,ans=clozeAnswers[i];_cc.apply(this,arguments);
+  if(!ans)return;const ok=ans._ok;
+  const fb=document.getElementById('cloze-fb');if(fb){fb.classList.add('pop');}
+  const row=document.getElementById('cloze-input-row'),box=document.querySelector('.session-box');
+  if(ok&&box){box.classList.remove('flash-ok');void box.offsetWidth;box.classList.add('flash-ok');}
+  if(!ok&&row){row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake');}
+  if(!ok&&box){box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');}
+};
+const _rh=renderHome;
+renderHome=function(){
+  _rh.apply(this,arguments);
+  const wrap=document.querySelector('.home-wrap');if(!wrap)return;
+  const now=Date.now(),due=state.cards.filter(c=>c.due<=now).length;
+  const log=mvLog(),W=36,cells=[];
+  const today=new Date();today.setHours(0,0,0,0);
+  const start=new Date(today);start.setDate(start.getDate()-(W*7-1)-today.getDay()+6);
+  let total=0,max=1;Object.values(log).forEach(v=>max=Math.max(max,v));
+  const pal=['#5b8cff','#7a7bff','#9a6bff','#b06bff'];
+  for(let i=0;i<W*7;i++){const d=new Date(start);d.setDate(start.getDate()+i);if(d>today){cells.push('<i style="opacity:.0"></i>');continue}
+    const n=log[mvDay(d)]||0;total+=n;
+    cells.push(n?`<i title="${d.toDateString()}: ${n}" style="background:linear-gradient(135deg,${pal[Math.min(3,Math.floor(n/max*3.99))]},#10a37f);opacity:${(.35+.65*n/max).toFixed(2)}"></i>`:`<i title="${d.toDateString()}"></i>`);}
+  const fc=Array(14).fill(0);
+  state.cards.forEach(c=>{const k=Math.floor((new Date(c.due).setHours(0,0,0,0)-today)/864e5);if(k<=0)fc[0]++;else if(k<14)fc[k]++;});
+  const fm=Math.max(1,...fc),lbl=[...Array(14)].map((_,i)=>{const d=new Date(today);d.setDate(d.getDate()+i);return `<span>${i===0?'Now':d.getDate()}</span>`}).join('');
+  const dk=state.decks[0];
+  const html=`<div class="ol-sec mv-wide">
+    <div class="mv-box mv-today" style="${ntGrad('today'+mvDay(now))}"><div><div class="big">${due} due</div><div class="sub">about ${Math.max(1,Math.round(due*0.4))} min · ${total} reviews in 36 weeks</div></div>${due&&dk?`<button onclick="(function(){const c=state.cards.find(c=>c.due<=Date.now());selectDeck(c.deckId);startReview(false)})()">Start now ↗</button>`:'<button onclick="openCardEditor()">Add a card</button>'}</div>
+    <div class="mv-box"><h3>Next 14 days</h3><div class="mv-fc">${fc.map(v=>`<div title="${v}" style="height:${Math.max(3,v/fm*100)}%"></div>`).join('')}</div><div class="mv-fcl">${lbl}</div></div>
+  </div>
+  <div class="ol-sec"><div class="mv-box"><h3>Memory activity</h3><div class="mv-heat" style="grid-template-columns:repeat(${W},1fr)">${cells.join('')}</div><div class="mv-cap">Tracks reviews from today onward · brighter = more reviews</div></div></div>`;
+  const first=wrap.querySelector('.ol-sec');first.insertAdjacentHTML('afterend',html);
+};
 renderHome();
 </script>
 
