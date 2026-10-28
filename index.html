@@ -207,6 +207,10 @@
   .cli-step-mark { margin-left: auto; font-size: 13px; font-weight: 700; }
   .cli-step-mark.ok { color: #27c93f; }
   .cli-step-mark.bad { color: #ff5f56; }
+  .cli-note { border: 1px solid var(--border); border-left: 3px solid var(--text); border-radius: 12px; padding: 14px 18px; margin: 0 0 16px; background: var(--bg-inset); }
+  .cli-note-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .cli-note-body { font-size: 14.5px; line-height: 1.6; }
+  .cli-note-body p { margin: 0 0 6px; } .cli-note-body p:last-child { margin: 0; }
   .cli-skipped { color: #7d8590; font-style: italic; }
   .cli-other-line { color: #7d8590; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 2px; }
   .cli-typed.incorrect { color: #ff5f56; text-decoration: line-through; opacity: 0.85; }
@@ -1094,6 +1098,8 @@ body:not(.dark) .review-wrap{position:relative}
       <textarea class="editor-ta" id="ecli-answers" style="min-height:90px;font-family:'JetBrains Mono',monospace;"></textarea>
       <div class="field-label">Hint <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
       <input class="text-input" id="ecli-hint" type="text" placeholder="e.g. think about the -mtime flag" />
+      <div class="field-label">Note <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — shown after you answer)</span></div>
+      <textarea class="editor-ta" id="ecli-note" placeholder="e.g. Warning: Linux has no Recycle Bin. rm is permanent." onkeydown="taKey(event,'ecli-note')" style="min-height:70px;"></textarea>
     </div>
 
     <!-- AYAH CONTINUATION -->
@@ -2090,6 +2096,7 @@ function openCardEditor(cardId) {
         ? c.cliSteps.map(alts => alts.map((a, i) => (i ? 'or: ' : '') + a).join('\n')).join('\n')
         : (c.cliAnswers || []).join('\n');
       document.getElementById('ecli-hint').value = c.cliHint || '';
+      document.getElementById('ecli-note').value = c.cliNote || '';
       updateCliEditorMode();
     } else if (c.type === 'ayah') {
       document.getElementById('eayah-ref').value = c.ayahRef || '';
@@ -2113,6 +2120,7 @@ function openCardEditor(cardId) {
     document.getElementById('ecli-multi').checked = false;
     updateCliEditorMode();
     document.getElementById('ecli-hint').value = '';
+    document.getElementById('ecli-note').value = '';
     document.getElementById('eayah-ref').value = '';
     document.getElementById('eayah-prompt').value = '';
     document.getElementById('eayah-continuation').value = '';
@@ -2287,17 +2295,19 @@ function saveCard() {
       else if (steps.length === 1) cliAnswers = steps[0]; // one step is just a normal single-command card
     }
     const cliHint = document.getElementById('ecli-hint').value.trim();
+    const cliNote = document.getElementById('ecli-note').value.trim();
     document.getElementById('ecli-prompt').style.borderColor = cliPrompt ? '' : 'var(--red)';
     document.getElementById('ecli-answers').style.borderColor = cliAnswers.length ? '' : 'var(--red)';
     if (!cliPrompt || !cliAnswers.length) return;
     if (editingCardId) {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) {
-        c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli'; c.tags = [...currentEditorTags];
+        c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli';
+        if (cliNote) c.cliNote = cliNote; else delete c.cliNote; c.tags = [...currentEditorTags];
         if (cliSteps) c.cliSteps = cliSteps; else delete c.cliSteps;
       }
     } else {
-      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
+      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, cliNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
       if (cliSteps) card.cliSteps = cliSteps;
       state.cards.push(card);
     }
@@ -3682,6 +3692,13 @@ function checkAyah() {
 // ── multi-step CLI cards: card.cliSteps = [[alternatives for step 1], [alternatives for step 2], ...]
 let cliStepIdx = 0, cliStepResults = [];
 
+// Learning note, revealed once the card is finished (never before, so it can't give the answer away)
+function showCliNote(card) {
+  if (!card.cliNote || document.getElementById('cli-note')) return;
+  const body = document.querySelector('.cli-terminal');
+  if (body) body.insertAdjacentHTML('afterend', `<div class="cli-note" id="cli-note"><div class="cli-note-label">Note</div><div class="cli-note-body">${md(card.cliNote)}</div></div>`);
+}
+
 function isCliMulti(card) { return Array.isArray(card.cliSteps) && card.cliSteps.length > 1; }
 
 function updateCliStepUI(card) {
@@ -3767,6 +3784,7 @@ function checkCliStep(card, giveUp) {
   const fb = document.getElementById('cli-feedback');
   fb.textContent = correct === total ? `✓ all ${total} steps correct` : `${correct}/${total} steps correct`;
   fb.className = 'feedback ' + (correct === total ? 'ok' : 'bad');
+  showCliNote(card);
   document.getElementById('rating-grid').classList.add('show');
 }
 
@@ -3836,6 +3854,7 @@ function checkCli(giveUp) {
   fb.className = 'feedback ' + (ok ? 'ok' : 'bad');
 
   document.getElementById('cli-check-btn').style.display = 'none';
+  showCliNote(card);
   document.getElementById('rating-grid').classList.add('show');
 }
 
