@@ -203,7 +203,12 @@
   }
   .cli-input::placeholder { color: #444c56; font-style: italic; }
   .cli-input:disabled { opacity: 1; }
-  .cli-typed { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .cli-typed { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #f0f0f0; }
+  .cli-step-mark { margin-left: auto; font-size: 13px; font-weight: 700; }
+  .cli-step-mark.ok { color: #27c93f; }
+  .cli-step-mark.bad { color: #ff5f56; }
+  .cli-skipped { color: #7d8590; font-style: italic; }
+  .cli-other-line { color: #7d8590; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 2px; }
   .cli-typed.incorrect { color: #ff5f56; text-decoration: line-through; opacity: 0.85; }
   .cli-accepted-line { color: #27c93f; font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-top: 8px; }
   .cli-accepted-line::before { content: '✓ accepted: '; color: #7d8590; }
@@ -1080,9 +1085,13 @@ body:not(.dark) .review-wrap{position:relative}
     <div id="cli-fields" style="display:none;">
       <div class="field-label">Prompt</div>
       <textarea class="editor-ta" id="ecli-prompt" placeholder="e.g. Find all files modified in the last 7 days" onkeydown="taKey(event,'ecli-prompt')" style="min-height:70px;"></textarea>
-      <div class="field-label">Accepted command(s)</div>
-      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">One per line. Any of these count as correct — flags can be typed in any order.</div>
-      <textarea class="editor-ta" id="ecli-answers" placeholder="find . -mtime -7&#10;find . -mtime -7 -type f" style="min-height:90px;font-family:'JetBrains Mono',monospace;"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:500;">
+        <input type="checkbox" id="ecli-multi" onchange="updateCliEditorMode()" style="width:16px;height:16px;cursor:pointer;" />
+        Multi-step — ask for several commands, one after another, in order
+      </label>
+      <div class="field-label" id="ecli-answers-label">Accepted command(s)</div>
+      <div id="ecli-answers-hint" style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;line-height:1.6;"></div>
+      <textarea class="editor-ta" id="ecli-answers" style="min-height:90px;font-family:'JetBrains Mono',monospace;"></textarea>
       <div class="field-label">Hint <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
       <input class="text-input" id="ecli-hint" type="text" placeholder="e.g. think about the -mtime flag" />
     </div>
@@ -1854,7 +1863,7 @@ function cardRow(c) {
     : c.type === 'code'
     ? (c.codePrompt || '').slice(0, 120)
     : c.type === 'cli'
-    ? (c.cliPrompt || '').slice(0, 120)
+    ? (c.cliPrompt || '').slice(0, 120) + (isCliMulti(c) ? ` · ${c.cliSteps.length} steps` : '')
     : c.type === 'ayah'
     ? (c.ayahPrompt || '').slice(0, 120)
     : (c.front || '').slice(0,120);
@@ -2075,8 +2084,13 @@ function openCardEditor(cardId) {
       refreshCodeAnswerHighlight();
     } else if (c.type === 'cli') {
       document.getElementById('ecli-prompt').value = c.cliPrompt || '';
-      document.getElementById('ecli-answers').value = (c.cliAnswers || []).join('\n');
+      const multi = isCliMulti(c);
+      document.getElementById('ecli-multi').checked = multi;
+      document.getElementById('ecli-answers').value = multi
+        ? c.cliSteps.map(alts => alts.map((a, i) => (i ? 'or: ' : '') + a).join('\n')).join('\n')
+        : (c.cliAnswers || []).join('\n');
       document.getElementById('ecli-hint').value = c.cliHint || '';
+      updateCliEditorMode();
     } else if (c.type === 'ayah') {
       document.getElementById('eayah-ref').value = c.ayahRef || '';
       document.getElementById('eayah-prompt').value = c.ayahPrompt || '';
@@ -2096,6 +2110,8 @@ function openCardEditor(cardId) {
     document.getElementById('ecode-answer').value = '';
     document.getElementById('ecli-prompt').value = '';
     document.getElementById('ecli-answers').value = '';
+    document.getElementById('ecli-multi').checked = false;
+    updateCliEditorMode();
     document.getElementById('ecli-hint').value = '';
     document.getElementById('eayah-ref').value = '';
     document.getElementById('eayah-prompt').value = '';
@@ -2119,6 +2135,18 @@ function closeCardEditor() {
   }
 }
 
+// CLI card editor: wording of the answers box changes with the multi-step switch
+function updateCliEditorMode() {
+  const multi = document.getElementById('ecli-multi').checked;
+  document.getElementById('ecli-answers-label').textContent = multi ? 'Steps (in order)' : 'Accepted command(s)';
+  document.getElementById('ecli-answers-hint').innerHTML = multi
+    ? 'One command per line, in the order they will be asked. To accept another way of writing a step, add a line starting with <code>or:</code> right below it. Flags can be typed in any order.'
+    : 'One per line. Any of these count as correct — flags can be typed in any order.';
+  document.getElementById('ecli-answers').placeholder = multi
+    ? 'cd documents\nor: cd ./documents\ncd ..'
+    : 'find . -mtime -7\nfind . -mtime -7 -type f';
+}
+
 function setCardType(t) {
   cardType = t;
   ['basic','cloze','code','cli','ayah'].forEach(x => {
@@ -2127,6 +2155,7 @@ function setCardType(t) {
     if (btn) btn.classList.toggle('active', x === t);
     if (fields) fields.style.display = x === t ? 'block' : 'none';
   });
+  if (t === 'cli') updateCliEditorMode();
   if (t === 'code') {
     attachHighlightSync('ecode-answer', 'ecode-answer-highlight', () => document.getElementById('ecode-lang').value);
   }
@@ -2241,16 +2270,36 @@ function saveCard() {
     }
   } else if (cardType === 'cli') {
     const cliPrompt = document.getElementById('ecli-prompt').value.trim();
-    const cliAnswers = document.getElementById('ecli-answers').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const multiOn = document.getElementById('ecli-multi').checked;
+    const lines = document.getElementById('ecli-answers').value.split('\n').map(s => s.trim()).filter(Boolean)
+      .map(l => multiOn ? l : l.replace(/^or:\s*/i, '')); // in single mode every line is already an alternative
+    // single mode: every line is an alternative for the one command.
+    // multi mode: every line is a step; an "or: ..." line adds an alternative to the step above it.
+    let cliAnswers = lines, cliSteps = null;
+    if (multiOn) {
+      const steps = [];
+      lines.forEach(l => {
+        const alt = /^or:\s*(.+)$/i.exec(l);
+        if (alt && steps.length) steps[steps.length - 1].push(alt[1].trim());
+        else steps.push([l]);
+      });
+      if (steps.length > 1) { cliSteps = steps; cliAnswers = steps.flat(); }
+      else if (steps.length === 1) cliAnswers = steps[0]; // one step is just a normal single-command card
+    }
     const cliHint = document.getElementById('ecli-hint').value.trim();
     document.getElementById('ecli-prompt').style.borderColor = cliPrompt ? '' : 'var(--red)';
     document.getElementById('ecli-answers').style.borderColor = cliAnswers.length ? '' : 'var(--red)';
     if (!cliPrompt || !cliAnswers.length) return;
     if (editingCardId) {
       const c = state.cards.find(x => x.id === editingCardId);
-      if (c) { c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli'; c.tags = [...currentEditorTags]; }
+      if (c) {
+        c.cliPrompt = cliPrompt; c.cliAnswers = cliAnswers; c.cliHint = cliHint; c.type = 'cli'; c.tags = [...currentEditorTags];
+        if (cliSteps) c.cliSteps = cliSteps; else delete c.cliSteps;
+      }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
+      if (cliSteps) card.cliSteps = cliSteps;
+      state.cards.push(card);
     }
   } else if (cardType === 'ayah') {
     const ayahRef = document.getElementById('eayah-ref').value.trim();
@@ -3630,7 +3679,99 @@ function checkAyah() {
   document.getElementById('rating-grid').classList.add('show');
 }
 
+// ── multi-step CLI cards: card.cliSteps = [[alternatives for step 1], [alternatives for step 2], ...]
+let cliStepIdx = 0, cliStepResults = [];
+
+function isCliMulti(card) { return Array.isArray(card.cliSteps) && card.cliSteps.length > 1; }
+
+function updateCliStepUI(card) {
+  const total = card.cliSteps.length;
+  document.getElementById('cli-step-label').textContent = `zsh — meno · step ${cliStepIdx + 1} of ${total}`;
+  document.getElementById('cli-input').placeholder = `command ${cliStepIdx + 1} of ${total}…`;
+  document.getElementById('cli-check-btn').textContent = cliStepIdx + 1 < total ? 'Check step' : 'Check last step';
+}
+
+function renderCliStepsRev(main, card, pct) {
+  cliStepIdx = 0; cliStepResults = [];
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cli-terminal">
+      <div class="cli-titlebar">
+        <span class="cli-dot red"></span><span class="cli-dot yellow"></span><span class="cli-dot green"></span>
+        <span class="cli-titlebar-label" id="cli-step-label"></span>
+      </div>
+      <div class="cli-body">
+        <div class="cli-comment-line">${esc(card.cliPrompt || '')}</div>
+        <div id="cli-history"></div>
+        <div class="cli-prompt-row" id="cli-prompt-row">
+          <span class="cli-prompt-sigil">➜</span>
+          <span class="cli-prompt-path">~</span>
+          <input type="text" id="cli-input" class="cli-input" autocomplete="off" autocorrect="off" spellcheck="false" />
+        </div>
+        <div id="cli-result"></div>
+      </div>
+    </div>
+    <div class="feedback-row" style="margin-top:2px;">
+      <span class="feedback" id="cli-feedback"></span>
+    </div>
+    <div id="cli-step-btns" style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn-check" id="cli-check-btn" onclick="checkCli()"></button>
+      <button class="btn-secondary" onclick="checkCli(true)" title="Reveal this step's answer and move on">Show answer</button>
+    </div>
+    ${ratingHTML(card)}
+  </div>`;
+
+  updateCliStepUI(card);
+  setTimeout(() => {
+    const inp = document.getElementById('cli-input');
+    if (inp) { inp.focus(); inp.onkeydown = e => { if (e.key === 'Enter') checkCli(); }; }
+  }, 30);
+}
+
+// Check the current step. giveUp = true reveals the answer without an attempt.
+function checkCliStep(card, giveUp) {
+  const inp = document.getElementById('cli-input');
+  if (!inp || inp.disabled) return;
+  const typed = inp.value.trim();
+  if (!typed && !giveUp) return; // an empty Enter shouldn't burn a step; "Show answer" is the explicit way out
+  const alts = card.cliSteps[cliStepIdx];
+  const ok = !giveUp && alts.some(a => cliCommandsMatch(typed, a));
+  cliStepResults.push(ok);
+
+  let line = `<div class="cli-prompt-row">
+    <span class="cli-prompt-sigil">➜</span><span class="cli-prompt-path">~</span>
+    ${typed ? `<span class="cli-typed${ok ? '' : ' incorrect'}">${esc(typed)}</span>` : '<span class="cli-skipped">(skipped)</span>'}
+    <span class="cli-step-mark ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'}</span>
+  </div>`;
+  if (!ok) {
+    line += `<div class="cli-accepted-line">${esc(alts[0])}</div>`;
+    if (alts.length > 1) line += `<div class="cli-other-line">(${alts.length - 1} other accepted answer${alts.length - 1 !== 1 ? 's' : ''})</div>`;
+  }
+  document.getElementById('cli-history').insertAdjacentHTML('beforeend', line);
+
+  cliStepIdx++;
+  if (cliStepIdx < card.cliSteps.length) {
+    inp.value = '';
+    updateCliStepUI(card);
+    inp.focus();
+    return;
+  }
+
+  // last step done: close the terminal, score the card, offer the rating buttons
+  inp.disabled = true;
+  document.getElementById('cli-prompt-row').style.display = 'none';
+  document.getElementById('cli-step-label').textContent = 'zsh — meno · done';
+  document.getElementById('cli-step-btns').style.display = 'none';
+  const correct = cliStepResults.filter(Boolean).length, total = cliStepResults.length;
+  if (card.cliHint && correct < total) document.getElementById('cli-result').innerHTML = `<div class="cli-hint-line">hint: ${esc(card.cliHint)}</div>`;
+  const fb = document.getElementById('cli-feedback');
+  fb.textContent = correct === total ? `✓ all ${total} steps correct` : `${correct}/${total} steps correct`;
+  fb.className = 'feedback ' + (correct === total ? 'ok' : 'bad');
+  document.getElementById('rating-grid').classList.add('show');
+}
+
 function renderCliRev(main, card, pct) {
+  if (isCliMulti(card)) { renderCliStepsRev(main, card, pct); return; }
   main.innerHTML = `<div class="review-wrap fs-md">
     ${progressHTML(pct)}
     <div class="cli-terminal">
@@ -3661,8 +3802,9 @@ function renderCliRev(main, card, pct) {
   }, 30);
 }
 
-function checkCli() {
+function checkCli(giveUp) {
   const card = revQueue[revIdx];
+  if (isCliMulti(card)) { checkCliStep(card, giveUp === true); return; }
   const inp = document.getElementById('cli-input');
   if (!inp) return;
   const typed = inp.value;
