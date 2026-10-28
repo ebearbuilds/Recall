@@ -215,6 +215,10 @@
   .cq-question { font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; margin: 6px 0 18px; }
   .cq-question p { margin: 0; }
   .cq-ans { width: 100%; min-height: 130px; box-sizing: border-box; margin-bottom: 14px; font-size: 15px; line-height: 1.6; }
+  .cq-hint { font-size: 12.5px; color: var(--text-muted); margin: -8px 0 12px; }
+  .cq-part { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+  .cq-tag { font-size: 12px; margin-top: 2px; color: var(--text-faint); }
+  .cq-tag.ok { color: var(--accent); }
   .cq-points-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 8px; }
   .cq-point { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 14.5px; line-height: 1.5; }
   .cq-point:hover { background: var(--fill); }
@@ -1074,8 +1078,12 @@ body:not(.dark) .review-wrap{position:relative}
       </div>
       <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." onkeydown="taKey(event,'ec')" style="min-height:200px;"></textarea>
       <div class="field-label">Recall questions <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — asked after the blanks, answered from memory)</span></div>
-      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;line-height:1.6;">Start a question with <code>Q:</code>. Under it, list the key points a good answer should cover, one per line starting with <code>-</code>. Leave a blank line between questions.</div>
-      <textarea class="editor-ta" id="ecq" placeholder="Q: What is least privilege?&#10;- users get only the access they need&#10;- limits the damage if an account is compromised" style="min-height:110px;font-family:'JetBrains Mono',monospace;"></textarea>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;line-height:1.6;">Start a question with <code>Q:</code>. Under it, list the key points a good answer should cover, one per line starting with <code>-</code>. Leave a blank line between questions.<br>Optional: add <code>::</code> and trigger words to a point, e.g. <code>- limits damage :: blast radius, compromis</code>. If your answer contains any of them, that point is pre-ticked (partial words work).</div>
+      <textarea class="editor-ta" id="ecq" placeholder="Q: What is least privilege?&#10;- users get only the access they need :: minimum, only&#10;- limits the damage if an account is compromised :: damage, blast radius" style="min-height:110px;font-family:'JetBrains Mono',monospace;"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:13px;font-weight:500;">
+        <input type="checkbox" id="ecq-split" style="width:16px;height:16px;cursor:pointer;" />
+        Answer in separate boxes — one per key point (for questions with 2+ points)
+      </label>
     </div>
 
     <!-- CODE RECALL -->
@@ -2119,6 +2127,7 @@ function openCardEditor(cardId) {
     } else {
       document.getElementById('ec').value = c.clozeText || '';
       document.getElementById('ecq').value = questionsToText(c.questions);
+      document.getElementById('ecq-split').checked = !!c.questionsSplit;
     }
     currentEditorTags = [...(c.tags || [])];
   } else {
@@ -2128,6 +2137,7 @@ function openCardEditor(cardId) {
     document.getElementById('eb').value = '';
     document.getElementById('ec').value = '';
     document.getElementById('ecq').value = '';
+    document.getElementById('ecq-split').checked = false;
     document.getElementById('ecode-prompt').value = '';
     document.getElementById('ecode-answer').value = '';
     document.getElementById('ecli-prompt').value = '';
@@ -2284,6 +2294,7 @@ function saveCard() {
   } else if (cardType === 'cloze') {
     const ct = document.getElementById('ec').value.trim();
     const questions = parseQuestions(document.getElementById('ecq').value);
+    const splitQ = document.getElementById('ecq-split').checked;
     document.getElementById('ec').style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
     if (!ct || !ct.includes('{{c')) return;
     if (editingCardId) {
@@ -2291,10 +2302,12 @@ function saveCard() {
       if (c) {
         c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags];
         if (questions.length) c.questions = questions; else delete c.questions;
+        if (questions.length && splitQ) c.questionsSplit = true; else delete c.questionsSplit;
       }
     } else {
       const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
       if (questions.length) card.questions = questions;
+      if (questions.length && splitQ) card.questionsSplit = true;
       state.cards.push(card);
     }
   } else if (cardType === 'cli') {
@@ -2801,7 +2814,11 @@ function revKeyHandler(e) {
 }
 
 // ─── RECALL QUESTIONS (optional second phase on a cloze card) ─────────────────
-// card.questions = [{ q: 'What is least privilege?', points: ['key point', ...] }, ...]
+// card.questions = [{ q: 'What is least privilege?', points: [{ t: 'key point', kw: ['keyword', ...] }, ...] }, ...]
+// card.questionsSplit = true → one answer box per key point (needs 2+ points on that question)
+// Older cards stored points as plain strings; cqPoint() accepts both.
+const cqPoint = p => typeof p === 'string' ? { t: p, kw: [] } : p;
+
 function parseQuestions(text) {
   const out = [];
   let cur = null;
@@ -2811,15 +2828,23 @@ function parseQuestions(text) {
     const q = /^q\s*[:：]\s*(.*)$/i.exec(line);
     const pt = /^[-*•]\s+(.*)$/.exec(line);
     if (q) { cur = { q: q[1].trim(), points: [] }; out.push(cur); }
-    else if (pt && cur) { if (pt[1].trim()) cur.points.push(pt[1].trim()); }
+    else if (pt && cur) {
+      const m = /^(.*?)\s+::\s*(.*)$/.exec(pt[1]);      // "- point text :: keyword, keyword"
+      const t = (m ? m[1] : pt[1]).trim();
+      const kw = m ? m[2].split(',').map(k => k.trim()).filter(Boolean) : [];
+      if (t) cur.points.push({ t, kw });
+    }
     else if (cur && !cur.points.length) cur.q += ' ' + line;   // question wrapped onto a second line
   });
   return out.filter(x => x.q);
 }
 
 function questionsToText(qs) {
-  return (qs || []).map(x => 'Q: ' + x.q + (x.points.length ? '\n' + x.points.map(p => '- ' + p).join('\n') : '')).join('\n\n');
+  return (qs || []).map(x => 'Q: ' + x.q + (x.points.length
+    ? '\n' + x.points.map(cqPoint).map(p => '- ' + p.t + (p.kw.length ? ' :: ' + p.kw.join(', ') : '')).join('\n') : '')).join('\n\n');
 }
+
+const cqNorm = s => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 
 let cqIdx = 0, cqCovered = 0, cqTotalPoints = 0;
 
@@ -2835,35 +2860,63 @@ function startClozeQuestions(card) {
   renderClozeQuestion(card);
 }
 
+function cqIsSplit(card, q) { return !!card.questionsSplit && q.points.length >= 2; }
+
 function renderClozeQuestion(card) {
-  const q = card.questions[cqIdx], n = card.questions.length;
+  const q = card.questions[cqIdx], n = card.questions.length, pts = q.points.map(cqPoint);
+  const split = cqIsSplit(card, q);
+  const hint = pts.length ? `<div class="cq-hint">${pts.length} key point${pts.length !== 1 ? 's' : ''} expected${split ? ' — one box each' : ''}</div>` : '';
+  const area = split
+    ? pts.map((_, i) => `<input class="text-input cq-part" type="text" data-i="${i}" placeholder="point ${i + 1}" autocomplete="off" spellcheck="false" />`).join('')
+    : `<textarea class="editor-ta cq-ans" id="cq-ans" placeholder="Explain it in your own words — no peeking…" spellcheck="false"></textarea>`;
   document.getElementById('cq-wrap').innerHTML = `<div class="cq-box">
     <div class="session-label">Question ${cqIdx + 1} / ${n} · answer from memory</div>
     <div class="cq-question">${md(q.q)}</div>
-    <textarea class="editor-ta cq-ans" id="cq-ans" placeholder="Explain it in your own words — no peeking…" spellcheck="false"></textarea>
+    ${hint}
+    <div id="cq-area">${area}</div>
     <div id="cq-after"></div>
     <button class="btn-check" id="cq-reveal" onclick="revealClozeQuestion()">Reveal answer · ⌘/Ctrl+Enter</button>
   </div>`;
-  const ta = document.getElementById('cq-ans');
-  ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealClozeQuestion(); } };
-  setTimeout(() => ta.focus({ preventScroll: true }), 30);
+  const fields = [...document.querySelectorAll('#cq-area textarea, #cq-area input')];
+  fields.forEach((el, i) => {
+    el.onkeydown = e => {
+      if (e.key !== 'Enter') return;
+      if (e.metaKey || e.ctrlKey) { e.preventDefault(); revealClozeQuestion(); }
+      else if (split) { e.preventDefault(); if (fields[i + 1]) fields[i + 1].focus(); else revealClozeQuestion(); }   // Enter walks through the boxes
+    };
+  });
+  setTimeout(() => fields[0] && fields[0].focus({ preventScroll: true }), 30);
+}
+
+function cqAnswerText() {
+  return [...document.querySelectorAll('#cq-area textarea, #cq-area input')].map(e => e.value).join('\n');
 }
 
 function revealClozeQuestion() {
-  const card = revQueue[revIdx], q = card.questions[cqIdx];
-  const ta = document.getElementById('cq-ans');
-  if (!ta || ta.readOnly) return;
-  ta.readOnly = true;
+  const card = revQueue[revIdx], q = card.questions[cqIdx], pts = q.points.map(cqPoint);
+  const area = document.getElementById('cq-area');
+  if (!area || area.dataset.locked) return;
+  area.dataset.locked = '1';
+  area.querySelectorAll('textarea, input').forEach(e => e.readOnly = true);
   const last = cqIdx === card.questions.length - 1;
-  cqTotalPoints += q.points.length;
-  const pts = q.points.length
-    ? `<div class="cq-points-label">Key points — tick what you covered</div>` + q.points.map((p, i) =>
-        `<label class="cq-point"><input type="checkbox" onchange="cqCovered += this.checked ? 1 : -1" /><span>${md(p)}</span></label>`).join('')
+  cqTotalPoints += pts.length;
+  const answer = cqNorm(cqAnswerText());
+  const list = pts.length
+    ? `<div class="cq-points-label">Key points — ticked where your answer matched, fix any that are wrong</div>` + pts.map(p => {
+        const hit = p.kw.length > 0 && p.kw.some(k => { const nk = cqNorm(k); return nk && answer.includes(nk); });
+        const tag = !p.kw.length ? '' : hit
+          ? '<div class="cq-tag ok">✓ found in your answer</div>'
+          : '<div class="cq-tag">no keyword match — tick it if you covered it another way</div>';
+        return `<label class="cq-point"><input type="checkbox" ${hit ? 'checked' : ''} /><span>${md(p.t)}${tag}</span></label>`;
+      }).join('')
     : `<div class="cq-points-label">Compare your answer with the note below</div>`;
-  document.getElementById('cq-after').innerHTML = pts;
+  document.getElementById('cq-after').innerHTML = list;
   const btn = document.getElementById('cq-reveal');
   btn.textContent = last ? 'Finish' : 'Next question →';
-  btn.onclick = () => (last ? finishClozeQuestions(card) : (cqIdx++, renderClozeQuestion(card)));
+  btn.onclick = () => {
+    cqCovered += document.querySelectorAll('#cq-after .cq-point input:checked').length;
+    if (last) finishClozeQuestions(card); else { cqIdx++; renderClozeQuestion(card); }
+  };
   if (last) {   // show the full note for the final comparison (without replaying the blank-feedback animation)
     const box = document.querySelector('.session-box');
     box.classList.remove('flash-ok', 'shake');
