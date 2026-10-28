@@ -211,6 +211,16 @@
   .cli-note-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
   .cli-note-body { font-size: 14.5px; line-height: 1.6; }
   .cli-note-body p { margin: 0 0 6px; } .cli-note-body p:last-child { margin: 0; }
+  .cq-box { border: 1px solid var(--border); border-radius: 20px; padding: 28px 34px; margin-bottom: 16px; background: var(--bg-card); }
+  .cq-question { font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; margin: 6px 0 18px; }
+  .cq-question p { margin: 0; }
+  .cq-ans { width: 100%; min-height: 130px; box-sizing: border-box; margin-bottom: 14px; font-size: 15px; line-height: 1.6; }
+  .cq-points-label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 8px; }
+  .cq-point { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 14.5px; line-height: 1.5; }
+  .cq-point:hover { background: var(--fill); }
+  .cq-point input { margin-top: 4px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+  .cq-point p { margin: 0; }
+  #cq-after { margin-bottom: 14px; }
   .cli-skipped { color: #7d8590; font-style: italic; }
   .cli-other-line { color: #7d8590; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 2px; }
   .cli-typed.incorrect { color: #ff5f56; text-decoration: line-through; opacity: 0.85; }
@@ -1063,6 +1073,9 @@ body:not(.dark) .review-wrap{position:relative}
         <button class="rich-btn" onclick="insertWordCloze()" title="Cloze each word individually">+ word cloze</button>
       </div>
       <textarea class="editor-ta" id="ec" placeholder="The capital of France is {{c1::Paris}}..." onkeydown="taKey(event,'ec')" style="min-height:200px;"></textarea>
+      <div class="field-label">Recall questions <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — asked after the blanks, answered from memory)</span></div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;line-height:1.6;">Start a question with <code>Q:</code>. Under it, list the key points a good answer should cover, one per line starting with <code>-</code>. Leave a blank line between questions.</div>
+      <textarea class="editor-ta" id="ecq" placeholder="Q: What is least privilege?&#10;- users get only the access they need&#10;- limits the damage if an account is compromised" style="min-height:110px;font-family:'JetBrains Mono',monospace;"></textarea>
     </div>
 
     <!-- CODE RECALL -->
@@ -1865,7 +1878,7 @@ function removeBulkTag() {
 function cardRow(c) {
   const isDue = c.due <= Date.now();
   const front = c.type === 'cloze'
-    ? c.clozeText.replace(/\{\{c\d+::(.+?)\}\}/g,'[...]').slice(0,120)
+    ? c.clozeText.replace(/\{\{c\d+::(.+?)\}\}/g,'[...]').slice(0,120) + (c.questions && c.questions.length ? ` · ${c.questions.length} question${c.questions.length !== 1 ? 's' : ''}` : '')
     : c.type === 'code'
     ? (c.codePrompt || '').slice(0, 120)
     : c.type === 'cli'
@@ -2105,6 +2118,7 @@ function openCardEditor(cardId) {
       document.getElementById('eayah-decoys').value = (c.ayahDecoys || []).join(' ');
     } else {
       document.getElementById('ec').value = c.clozeText || '';
+      document.getElementById('ecq').value = questionsToText(c.questions);
     }
     currentEditorTags = [...(c.tags || [])];
   } else {
@@ -2113,6 +2127,7 @@ function openCardEditor(cardId) {
     document.getElementById('ef').value = '';
     document.getElementById('eb').value = '';
     document.getElementById('ec').value = '';
+    document.getElementById('ecq').value = '';
     document.getElementById('ecode-prompt').value = '';
     document.getElementById('ecode-answer').value = '';
     document.getElementById('ecli-prompt').value = '';
@@ -2268,13 +2283,19 @@ function saveCard() {
     }
   } else if (cardType === 'cloze') {
     const ct = document.getElementById('ec').value.trim();
+    const questions = parseQuestions(document.getElementById('ecq').value);
     document.getElementById('ec').style.borderColor = (ct && ct.includes('{{c')) ? '' : 'var(--red)';
     if (!ct || !ct.includes('{{c')) return;
     if (editingCardId) {
       const c = state.cards.find(x => x.id === editingCardId);
-      if (c) { c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags]; }
+      if (c) {
+        c.clozeText = ct; c.type = 'cloze'; c.tags = [...currentEditorTags];
+        if (questions.length) c.questions = questions; else delete c.questions;
+      }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
+      if (questions.length) card.questions = questions;
+      state.cards.push(card);
     }
   } else if (cardType === 'cli') {
     const cliPrompt = document.getElementById('ecli-prompt').value.trim();
@@ -2779,6 +2800,90 @@ function revKeyHandler(e) {
   }
 }
 
+// ─── RECALL QUESTIONS (optional second phase on a cloze card) ─────────────────
+// card.questions = [{ q: 'What is least privilege?', points: ['key point', ...] }, ...]
+function parseQuestions(text) {
+  const out = [];
+  let cur = null;
+  (text || '').split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    const q = /^q\s*[:：]\s*(.*)$/i.exec(line);
+    const pt = /^[-*•]\s+(.*)$/.exec(line);
+    if (q) { cur = { q: q[1].trim(), points: [] }; out.push(cur); }
+    else if (pt && cur) { if (pt[1].trim()) cur.points.push(pt[1].trim()); }
+    else if (cur && !cur.points.length) cur.q += ' ' + line;   // question wrapped onto a second line
+  });
+  return out.filter(x => x.q);
+}
+
+function questionsToText(qs) {
+  return (qs || []).map(x => 'Q: ' + x.q + (x.points.length ? '\n' + x.points.map(p => '- ' + p).join('\n') : '')).join('\n\n');
+}
+
+let cqIdx = 0, cqCovered = 0, cqTotalPoints = 0;
+
+// Called when the last blank has been answered on a card that has questions.
+function startClozeQuestions(card) {
+  cqIdx = 0; cqCovered = 0; cqTotalPoints = 0;
+  document.querySelector('.session-box').style.display = 'none';   // hide the note: answer from memory
+  document.getElementById('cloze-input-row').style.display = 'none';
+  document.querySelector('.feedback-row').style.display = 'none';
+  const wrap = document.createElement('div');
+  wrap.id = 'cq-wrap';
+  document.querySelector('.session-box').insertAdjacentElement('beforebegin', wrap);
+  renderClozeQuestion(card);
+}
+
+function renderClozeQuestion(card) {
+  const q = card.questions[cqIdx], n = card.questions.length;
+  document.getElementById('cq-wrap').innerHTML = `<div class="cq-box">
+    <div class="session-label">Question ${cqIdx + 1} / ${n} · answer from memory</div>
+    <div class="cq-question">${md(q.q)}</div>
+    <textarea class="editor-ta cq-ans" id="cq-ans" placeholder="Explain it in your own words — no peeking…" spellcheck="false"></textarea>
+    <div id="cq-after"></div>
+    <button class="btn-check" id="cq-reveal" onclick="revealClozeQuestion()">Reveal answer · ⌘/Ctrl+Enter</button>
+  </div>`;
+  const ta = document.getElementById('cq-ans');
+  ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealClozeQuestion(); } };
+  setTimeout(() => ta.focus({ preventScroll: true }), 30);
+}
+
+function revealClozeQuestion() {
+  const card = revQueue[revIdx], q = card.questions[cqIdx];
+  const ta = document.getElementById('cq-ans');
+  if (!ta || ta.readOnly) return;
+  ta.readOnly = true;
+  const last = cqIdx === card.questions.length - 1;
+  cqTotalPoints += q.points.length;
+  const pts = q.points.length
+    ? `<div class="cq-points-label">Key points — tick what you covered</div>` + q.points.map((p, i) =>
+        `<label class="cq-point"><input type="checkbox" onchange="cqCovered += this.checked ? 1 : -1" /><span>${md(p)}</span></label>`).join('')
+    : `<div class="cq-points-label">Compare your answer with the note below</div>`;
+  document.getElementById('cq-after').innerHTML = pts;
+  const btn = document.getElementById('cq-reveal');
+  btn.textContent = last ? 'Finish' : 'Next question →';
+  btn.onclick = () => (last ? finishClozeQuestions(card) : (cqIdx++, renderClozeQuestion(card)));
+  if (last) {   // show the full note for the final comparison (without replaying the blank-feedback animation)
+    const box = document.querySelector('.session-box');
+    box.classList.remove('flash-ok', 'shake');
+    box.style.display = '';
+  }
+}
+
+function finishClozeQuestions(card) {
+  document.getElementById('cq-reveal').style.display = 'none';
+  const fb = document.querySelector('.feedback-row'), f = document.getElementById('cloze-fb');
+  fb.style.display = '';
+  const blanks = `${clozeCorrect}/${clozeAnswers.length} blanks`;
+  const all = clozeCorrect === clozeAnswers.length && cqCovered === cqTotalPoints;
+  f.textContent = cqTotalPoints ? `${blanks} · ${cqCovered}/${cqTotalPoints} key points` : blanks;
+  f.className = 'feedback ' + (all ? 'ok' : 'bad');
+  const grid = document.getElementById('rating-grid');
+  grid.classList.add('show');
+  grid.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
 // ─── CLOZE REVIEW ─────────────────────────────────────────────────────────────
 function renderClozeRev(main, card, pct) {
   clozeBlankIdx = 0;
@@ -2839,7 +2944,7 @@ function renderClozeStep(card) {
   const d = document.getElementById('cloze-display');
   if (d) d.innerHTML = html;
   const ctr = document.getElementById('blank-counter');
-  if (ctr) ctr.textContent = (cur + 1) + ' / ' + clozeAnswers.length;
+  if (ctr) ctr.textContent = Math.min(cur + 1, clozeAnswers.length) + ' / ' + clozeAnswers.length;
   if (mainArea) mainArea.scrollTop = scrollY;
 }
 
@@ -2861,9 +2966,10 @@ function checkCloze() {
     renderClozeStep(card);
     input.style.display = 'none';
     document.getElementById('cloze-input-row').style.display = 'none';
-    document.getElementById('rating-grid').classList.add('show');
     fb.textContent = clozeCorrect === clozeAnswers.length ? '✓ all correct' : `${clozeCorrect}/${clozeAnswers.length} correct`;
     fb.className = 'feedback ' + (clozeCorrect === clozeAnswers.length ? 'ok' : 'bad');
+    if (card.questions && card.questions.length) startClozeQuestions(card);
+    else document.getElementById('rating-grid').classList.add('show');
   } else {
     renderClozeStep(card);
     input.value = '';
