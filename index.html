@@ -6,7 +6,7 @@
 <title>Meno</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23a3d977'/%3E%3Cstop offset='1' stop-color='%234d7cf0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -24,7 +24,6 @@
     --scrim: 0,0,0;
     --ink: #3a3a3a;
   }
-  body.dark .type-ayah { background: #262626; color: #e7e6e4; }
   body.dark .card-row-front code,
   body.dark .flip-content code,
   body.dark .cloze-display code { background: #272727; }
@@ -168,19 +167,8 @@
   .type-cloze { background: var(--purple-dim); color: var(--purple); }
   .type-code { background: var(--green-dim); color: var(--green); }
   .type-cli { background: var(--coral-dim); color: var(--coral); }
-  .type-ayah { background: var(--bg-hover); color: var(--text-muted); }
+  .type-vuln { background: var(--red-dim); color: var(--red); }
 
-  /* Ayah continuation — tap-to-arrange word tiles */
-  .ayah-ref-label { font-size: 11px; color: var(--text-faint); font-family: 'Inter', -apple-system, sans-serif; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 12px; }
-  .ayah-prompt-box { background: var(--bg-inset); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; }
-  .ayah-arabic-text { direction: rtl; font-family: 'Amiri', serif; font-size: 30px; line-height: 2.1; color: var(--text); text-align: right; }
-  .ayah-answer-row { direction: rtl; display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 12px 16px; margin-bottom: 16px; align-items: center; }
-  .ayah-answer-row.empty::before { content: 'tap the tiles below, in order'; color: var(--text-faint); font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-style: italic; direction: ltr; }
-  .ayah-bank { direction: rtl; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-  .ayah-tile { font-family: 'Amiri', serif; font-size: 24px; padding: 8px 18px; cursor: pointer; transition: border-color 0.12s, background 0.12s; user-select: none; color: var(--text); }
-  .ayah-tile.placed { opacity: 0.25; pointer-events: none; }
-  .ayah-tile.correct-flash { color: var(--text); }
-  .ayah-tile.wrong-flash { color: var(--text); }
 
   /* code recall review */
   .code-recall-wrap { width: 100%; }
@@ -215,6 +203,23 @@
   .cq-question { font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; margin: 6px 0 18px; }
   .cq-question p { margin: 0; }
   .cq-ans { width: 100%; min-height: 130px; box-sizing: border-box; margin-bottom: 14px; font-size: 15px; line-height: 1.6; }
+  .vuln-code { background: #0d1117; color: #c9d1d9; border: 1px solid var(--border); border-radius: 12px; padding: 8px 0; margin: 4px 0 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; }
+  .vuln-code .vl { display: flex; align-items: center; padding: 0 14px 0 0; border-left: 3px solid transparent; cursor: default; min-width: max-content; }
+  .vuln-code .vl[onclick] { cursor: pointer; }
+  .vuln-code .vl[onclick]:hover { background: rgba(255,255,255,.06); }
+  .vuln-code .vn { width: 40px; flex-shrink: 0; text-align: right; padding-right: 14px; color: #6e7681; user-select: none; }
+  .vuln-code .vc { white-space: pre; flex: 1; }
+  .vuln-code .vl.sel { background: rgba(88,166,255,.2); border-left-color: #58a6ff; }
+  .vuln-code .vl.ok { background: rgba(39,201,63,.18); border-left-color: #27c93f; }
+  .vuln-code .vl.miss { background: rgba(255,189,46,.16); border-left-color: #ffbd2e; }
+  .vuln-code .vl.bad { background: rgba(255,95,86,.16); border-left-color: #ff5f56; }
+  .vuln-code .vl.ok::after, .vuln-code .vl.miss::after, .vuln-code .vl.bad::after { font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; margin-left: 24px; white-space: nowrap; }
+  .vuln-code .vl.ok::after { content: '✓ flaw'; color: #27c93f; }
+  .vuln-code .vl.miss::after { content: 'missed'; color: #ffbd2e; }
+  .vuln-code .vl.bad::after { content: 'not a flaw'; color: #ff5f56; }
+  .vuln-empty { padding: 10px 16px; color: #6e7681; font-family: 'Inter', sans-serif; font-size: 13px; }
+  .vuln-why { font-size: 14.5px; line-height: 1.6; margin-bottom: 6px; }
+  .vuln-why p { margin: 0 0 6px; }
   .cq-hint { font-size: 12.5px; color: var(--text-muted); margin: -8px 0 12px; }
   .cq-part { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
   .cq-tag { font-size: 12px; margin-top: 2px; color: var(--text-faint); }
@@ -682,7 +687,7 @@
   .flip-face-label, .session-label, .code-prompt-label { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-muted); }
   .flip-content { font-size: 20px; line-height: 1.6; }
   .cloze-display { font-size: 20px; }
-  .session-box, .code-prompt-box, .ayah-prompt-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 28px 34px; box-shadow: 0 6px 24px rgba(0,0,0,.10); }
+  .session-box, .code-prompt-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 28px 34px; box-shadow: 0 6px 24px rgba(0,0,0,.10); }
   .cloze-blank-prev { border: 0; padding: 0 14px; }
   .cloze-display span[style*="color:var(--accent)"] { border-bottom-color: var(--green) !important; }
   .feedback { font-weight: 600; font-size: 14px; }
@@ -697,14 +702,9 @@
   .rl { font-size: 14px; }
   .ri { font-size: 11px; font-weight: 500; }
 
-  /* code / cli / ayah */
+  /* code / cli */
   .cli-terminal, .code-editor-area, .code-highlight-wrap.dark, .code-block { border: 0; border-radius: 14px; background: #222222; }
   body.dark .cli-terminal, body.dark .code-editor-area, body.dark .code-highlight-wrap.dark, body.dark .code-block { border: 1px solid #333; background: #0e0e0e; }
-  .ayah-tile { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 12px; font-weight: 700; }
-  .ayah-tile:hover { border-color: var(--text); box-shadow: var(--shadow-md); background: var(--bg-card); }
-  .ayah-answer-row { border: 2px dashed var(--border-strong); border-radius: 16px; }
-  .ayah-tile.correct-flash { background: var(--green-dim); border-color: var(--green); }
-  .ayah-tile.wrong-flash { background: var(--red-dim); border-color: var(--red); }
 
   /* ── FOCUS TIMER ── */
   .focus-session-panel { background: var(--bg-card); padding: 16px 20px; }
@@ -818,7 +818,7 @@
   body:not(.zz) .text-input, body:not(.zz) .editor-ta, body:not(.zz) .type-input, body:not(.zz) .recall-input, body:not(.zz) .focus-topic-input, body:not(.zz) .focus-deck-select { background: var(--fill); border: 1px solid transparent; border-radius: 14px; padding: 11px 15px; color: var(--text); }
   body:not(.zz) .text-input:focus, body:not(.zz) .editor-ta:focus, body:not(.zz) .type-input:focus, body:not(.zz) .recall-input:focus, body:not(.zz) .focus-topic-input:focus, body:not(.zz) .focus-deck-select:focus { border-color: var(--border-strong); box-shadow: none; background: var(--bg-card); }
   .review-wrap { max-width: 700px; margin: 0 auto; padding: 22px 20px 48px; }
-  body:not(.zz) .flip-front, .session-box, .code-prompt-box, .ayah-prompt-box { border: 0; box-shadow: none; padding: 34px 34px; min-height: 250px; display: flex; flex-direction: column; justify-content: center; }
+  body:not(.zz) .flip-front, .session-box, .code-prompt-box { border: 0; box-shadow: none; padding: 34px 34px; min-height: 250px; display: flex; flex-direction: column; justify-content: center; }
   body:not(.zz) .flip-back { padding: 24px 32px; position: relative; }
   body:not(.zz) .flip-back::before { content: ''; position: absolute; left: 18px; top: -11px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); border: 5px solid var(--oa-g); box-sizing: border-box; }
   .flip-content, .cloze-display { line-height: 1.55; }
@@ -872,7 +872,7 @@
   .main { max-width: 1000px; }
   .card-group-label { font-size: 22px; font-weight: 400; letter-spacing: -0.03em; }
   .card-row-front { font-size: 17px; letter-spacing: -0.02em; }
-  body:not(.zz) .flip-front, .session-box, .code-prompt-box, .ayah-prompt-box { border-radius: 20px; background: var(--bg-card); }
+  body:not(.zz) .flip-front, .session-box, .code-prompt-box { border-radius: 20px; background: var(--bg-card); }
   .flip-content, .cloze-display { font-size: 26px; font-weight: 400; letter-spacing: -0.03em; }
   body:not(.zz) .flip-back { border-radius: 20px; }
   body:not(.zz) .rating-btn { border-radius: 16px; }
@@ -987,7 +987,6 @@ body:not(.dark) .review-wrap{position:relative}
         <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="exportData()">Export</button>
         <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="document.getElementById('import-input').click()">Import</button>
         <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importData(event)" />
-        <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="openSurahModal()">Import surah</button>
         <select id="code-theme-select" class="text-input" style="width:auto;margin-bottom:0;padding:6px 10px;font-size:12px;cursor:pointer;" onchange="setCodeTheme(this.value)" title="Code syntax theme">
       <option value="github">GitHub Dark</option>
       <option value="dracula">Dracula</option>
@@ -1032,7 +1031,7 @@ body:not(.dark) .review-wrap{position:relative}
       <button class="type-btn" id="etype-cloze" onclick="setCardType('cloze')">Cloze deletion</button>
       <button class="type-btn" id="etype-code" onclick="setCardType('code')">Code recall</button>
       <button class="type-btn" id="etype-cli" onclick="setCardType('cli')">CLI recall</button>
-      <button class="type-btn" id="etype-ayah" onclick="setCardType('ayah')">Ayah continuation</button>
+      <button class="type-btn" id="etype-vuln" onclick="setCardType('vuln')">Spot the flaw</button>
     </div>
 
     <!-- BASIC -->
@@ -1086,6 +1085,31 @@ body:not(.dark) .review-wrap{position:relative}
       </label>
     </div>
 
+    <!-- SPOT THE FLAW -->
+    <div id="vuln-fields" style="display:none;">
+      <div class="field-label">Prompt <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <input class="text-input" id="evuln-prompt" type="text" placeholder="Find the vulnerability in this code" />
+      <div class="field-label">Language</div>
+      <select class="text-input" id="evuln-lang" style="margin-bottom:16px;cursor:pointer;" onchange="renderVulnPicker()">
+        <option value="javascript">JavaScript</option>
+        <option value="php">PHP</option>
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="sql">SQL</option>
+        <option value="bash">Bash</option>
+        <option value="other">Other</option>
+      </select>
+      <div class="field-label">Vulnerable code</div>
+      <textarea class="editor-ta" id="evuln-code" oninput="renderVulnPicker()" spellcheck="false" placeholder="const q = &quot;SELECT * FROM users WHERE id = &quot; + req.query.id;&#10;db.query(q);" style="min-height:120px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Click the vulnerable line(s)</div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">Finish the code first, then mark the lines — marks follow line numbers.</div>
+      <div class="vuln-code" id="evuln-pick"></div>
+      <div class="field-label">Why it's vulnerable <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you answer)</span></div>
+      <textarea class="editor-ta" id="evuln-why" placeholder="User input is concatenated into the SQL string, so an attacker can change the query (SQL injection)." onkeydown="taKey(event,'evuln-why')" style="min-height:70px;"></textarea>
+      <div class="field-label">Fixed version <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <textarea class="editor-ta" id="evuln-fix" spellcheck="false" placeholder="db.query(&quot;SELECT * FROM users WHERE id = ?&quot;, [req.query.id]);" style="min-height:80px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+    </div>
+
     <!-- CODE RECALL -->
     <div id="code-fields" style="display:none;">
       <div class="field-label">Prompt</div>
@@ -1094,6 +1118,8 @@ body:not(.dark) .review-wrap{position:relative}
       <select class="text-input" id="ecode-lang" style="margin-bottom:16px;cursor:pointer;" onchange="refreshCodeAnswerHighlight()">
         <option value="python">Python</option>
         <option value="javascript">JavaScript</option>
+        <option value="php">PHP</option>
+        <option value="java">Java</option>
         <option value="sql">SQL</option>
         <option value="bash">Bash</option>
         <option value="other">Other</option>
@@ -1121,19 +1147,6 @@ body:not(.dark) .review-wrap{position:relative}
       <input class="text-input" id="ecli-hint" type="text" placeholder="e.g. think about the -mtime flag" />
       <div class="field-label">Note <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — shown after you answer)</span></div>
       <textarea class="editor-ta" id="ecli-note" placeholder="e.g. Warning: Linux has no Recycle Bin. rm is permanent." onkeydown="taKey(event,'ecli-note')" style="min-height:70px;"></textarea>
-    </div>
-
-    <!-- AYAH CONTINUATION -->
-    <div id="ayah-fields" style="display:none;">
-      <div class="field-label">Reference <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional, e.g. Al-Baqarah 255)</span></div>
-      <input class="text-input" id="eayah-ref" type="text" placeholder="e.g. Al-Baqarah 255" />
-      <div class="field-label">Beginning of the ayah (shown to you)</div>
-      <textarea class="editor-ta" id="eayah-prompt" dir="rtl" placeholder="بِسْمِ اللَّهِ الرَّحْمَٰنِ" style="min-height:70px;font-family:'Amiri',serif;font-size:20px;"></textarea>
-      <div class="field-label">Continuation (what you'll reconstruct)</div>
-      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">Words are split by spaces and shuffled into tiles during review.</div>
-      <textarea class="editor-ta" id="eayah-continuation" dir="rtl" placeholder="الرَّحِيمِ" style="min-height:70px;font-family:'Amiri',serif;font-size:20px;"></textarea>
-      <div class="field-label">Decoy words <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — extra wrong tiles, space-separated)</span></div>
-      <input class="text-input" id="eayah-decoys" dir="rtl" type="text" placeholder="كلمات إضافية" style="font-family:'Amiri',serif;font-size:18px;" />
     </div>
 
     <div class="field-label">Tags <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
@@ -1185,28 +1198,31 @@ body:not(.dark) .review-wrap{position:relative}
   </div>
 </div>
 
-<!-- IMPORT SURAH MODAL -->
-<div class="overlay" id="surah-overlay" onclick="if(event.target===this)closeSurahModal()" style="z-index:250;">
-  <div class="modal">
-    <div class="modal-title">Import a surah</div>
-    <div class="field-label">Deck</div>
-    <select class="text-input" id="surah-deck-select"></select>
-    <div class="field-label">Surah name</div>
-    <input class="text-input" id="surah-name-input" type="text" placeholder="e.g. Ad-Duha" />
-    <div class="field-label">Verses <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(one per line, in order)</span></div>
-    <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">A card is generated for each consecutive pair — verse N is shown as context, verse N+1 is what you reconstruct from tiles.</div>
-    <textarea class="editor-ta" id="surah-verses-input" dir="rtl" placeholder="وَالضُّحَىٰ&#10;وَاللَّيْلِ إِذَا سَجَىٰ&#10;مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ" style="min-height:220px;font-family:'Amiri',serif;font-size:19px;"></textarea>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSurahModal()">Cancel</button>
-      <button class="btn-save" onclick="generateSurahCards()">Generate cards</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ─── STATE ────────────────────────────────────────────────────────────────────
 const SK = 'recall_v2';
-function loadState() { try { const s = localStorage.getItem(SK); return s ? JSON.parse(s) : fresh(); } catch { return fresh(); } }
+// "Ayah continuation" cards no longer exist. Rather than deleting any that are already saved, copy them to a backup
+// key (localStorage 'meno_removed_ayah_cards') first, then drop them from the app. If the backup can't be written,
+// they are left in place.
+const RETIRED_KEY = 'meno_removed_ayah_cards';
+function retireAyahCards(cards) {
+  const gone = (cards || []).filter(c => c && c.type === 'ayah');
+  if (!gone.length) return cards;
+  try {
+    const prev = JSON.parse(localStorage.getItem(RETIRED_KEY) || '[]');
+    const have = new Set(prev.map(c => c.id));
+    localStorage.setItem(RETIRED_KEY, JSON.stringify(prev.concat(gone.filter(c => !have.has(c.id)))));
+  } catch (e) { return cards; }
+  return cards.filter(c => !(c && c.type === 'ayah'));
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem(SK);
+    const st = s ? JSON.parse(s) : fresh();
+    st.cards = retireAyahCards(st.cards);
+    return st;
+  } catch { return fresh(); }
+}
 function fresh() { return { folders: [], decks: [], cards: [] }; }
 function save() {
   localStorage.setItem(SK, JSON.stringify(state));
@@ -1241,7 +1257,8 @@ function importData(e) {
       const existingFolderIds = new Set(state.folders.map(f => f.id));
       (imported.folders || []).forEach(f => { if (!existingFolderIds.has(f.id)) state.folders.push(f); });
       (imported.decks || []).forEach(d => { if (!existingDeckIds.has(d.id)) state.decks.push(d); });
-      (imported.cards || []).forEach(c => { if (!existingCardIds.has(c.id)) state.cards.push(c); });
+      retireAyahCards(imported.cards || []);   // backs up any old ayah cards instead of importing them
+      (imported.cards || []).filter(c => c.type !== 'ayah').forEach(c => { if (!existingCardIds.has(c.id)) state.cards.push(c); });
       save();
       renderSidebar();
       alert(`Import complete. Added ${(imported.decks||[]).filter(d=>!existingDeckIds.has(d.id)).length} decks and ${(imported.cards||[]).filter(c=>!existingCardIds.has(c.id)).length} cards.`);
@@ -1386,10 +1403,43 @@ function highlightPython(raw) {
 }
 
 // ─── LIVE SYNTAX HIGHLIGHT (overlay behind a transparent textarea) ────────────
+// Lightweight highlighter for non-Python languages (same colour classes as Python)
+const HL_LANGS = {
+  javascript: { kw: 'const let var function return if else for while do switch case break continue new delete typeof instanceof in of class extends import export from default async await try catch finally throw this null undefined true false', cm: '//[^\\n]*|/\\*[\\s\\S]*?\\*/', tpl: true, bi: 'console document window eval innerHTML Math JSON Object Array Promise require process' },
+  php: { kw: 'function return if else elseif foreach for while switch case break continue new class public private protected static echo print include require include_once require_once try catch finally throw null true false as isset empty array', cm: '//[^\\n]*|#[^\\n]*|/\\*[\\s\\S]*?\\*/', bi: 'mysqli_query mysql_query query exec system shell_exec eval unserialize md5 sha1 file_get_contents move_uploaded_file htmlspecialchars' },
+  java: { kw: 'public private protected static final class interface extends implements new return if else for while do switch case break continue try catch finally throw throws import package void int long double boolean String null true false this', cm: '//[^\\n]*|/\\*[\\s\\S]*?\\*/', bi: 'System Runtime Statement PreparedStatement ResultSet' },
+  sql: { kw: 'select from where and or not insert into values update set delete create table drop alter join left right inner outer on group by order having limit union all as distinct null like in exists is', ci: true, cm: '--[^\\n]*|/\\*[\\s\\S]*?\\*/', bi: 'count sum avg min max concat' },
+  bash: { kw: 'if then else elif fi for do done while case esac function in return exit export local echo cd rm cat grep chmod chown sudo curl wget eval', cm: '#[^\\n]*', bi: 'rm sudo eval chmod' },
+  other: { kw: '', cm: '//[^\\n]*|#[^\\n]*|/\\*[\\s\\S]*?\\*/' },
+};
+HL_LANGS.js = HL_LANGS.typescript = HL_LANGS.ts = HL_LANGS.javascript;
+HL_LANGS.sh = HL_LANGS.shell = HL_LANGS.bash;
+function highlightGeneric(raw, cfg) {
+  const kws = new Set((cfg.ci ? cfg.kw.toLowerCase() : cfg.kw).split(' ').filter(Boolean));
+  const bis = new Set((cfg.bi || '').split(' ').filter(Boolean));
+  const re = new RegExp('(' + cfg.cm + ')' + '|("(?:[^"\\\\\\n]|\\\\.)*")' + "|('(?:[^'\\\\\\n]|\\\\.)*')" + (cfg.tpl ? '|(`(?:[^`\\\\]|\\\\.)*`)' : '|((?!))') + '|(\\$?[A-Za-z_]\\w*)|(\\b\\d+\\.?\\d*)|([\\s\\S])', 'g');
+  let out = '', m;
+  while ((m = re.exec(raw)) !== null) {
+    const full = m[0];
+    if (m[1]) out += `<span class="py-comment">${esc(full)}</span>`;
+    else if (m[2] || m[3] || m[4]) out += `<span class="py-str">${esc(full)}</span>`;
+    else if (m[5]) {
+      const w = cfg.ci ? full.toLowerCase() : full;
+      if (kws.has(w)) out += `<span class="py-kw">${esc(full)}</span>`;
+      else if (bis.has(full)) out += `<span class="py-builtin">${esc(full)}</span>`;
+      else out += esc(full);
+    }
+    else if (m[6]) out += `<span class="py-num">${esc(full)}</span>`;
+    else out += esc(full);
+  }
+  return out;
+}
+
 function highlightForLang(raw, lang) {
   const l = (lang || 'python').toLowerCase();
   if (l === 'python' || l === 'py') return highlightPython(raw);
-  return esc(raw);
+  const cfg = HL_LANGS[l];
+  return cfg ? highlightGeneric(raw, cfg) : esc(raw);
 }
 
 function syncHighlightOverlay(taId, ovId, lang) {
@@ -1540,7 +1590,7 @@ function olArt(seed) {
 }
 function olText(c) {
   const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)(::.*?)?\}\}/g, '[…]')
-    : (c.front || c.codePrompt || c.cliPrompt || c.ayahPrompt || '');
+    : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || '');
   return String(t).replace(/<[^>]+>/g, ' ').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim() || '(empty card)';
 }
 
@@ -1684,7 +1734,7 @@ function cardSearchText(c) {
   if (c.type === 'cloze') return (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1');
   if (c.type === 'code') return (c.codePrompt || '') + ' ' + (c.codeAnswer || '');
   if (c.type === 'cli') return (c.cliPrompt || '') + ' ' + (c.cliAnswers || []).join(' ');
-  if (c.type === 'ayah') return (c.ayahRef || '') + ' ' + (c.ayahPrompt || '') + ' ' + (c.ayahWords || []).join(' ');
+  if (c.type === 'vuln') return (c.vulnPrompt || '') + ' ' + (c.vulnCode || '') + ' ' + (c.vulnWhy || '') + ' ' + (c.vulnFix || '');
   return (c.front || '') + ' ' + (c.back || '');
 }
 
@@ -1891,10 +1941,10 @@ function cardRow(c) {
     ? (c.codePrompt || '').slice(0, 120)
     : c.type === 'cli'
     ? (c.cliPrompt || '').slice(0, 120) + (isCliMulti(c) ? ` · ${c.cliSteps.length} steps` : '')
-    : c.type === 'ayah'
-    ? (c.ayahPrompt || '').slice(0, 120)
+    : c.type === 'vuln'
+    ? (c.vulnPrompt || 'Spot the flaw').slice(0, 80) + ' · ' + ((c.vulnCode || '').split('\n').find(l => l.trim()) || '').trim().slice(0, 50)
     : (c.front || '').slice(0,120);
-  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'ayah' ? 'type-ayah' : 'type-basic';
+  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'vuln' ? 'type-vuln' : 'type-basic';
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
     ? `<div class="card-tags-row">${tags.map(t => {
@@ -1912,7 +1962,7 @@ function cardRow(c) {
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%;">
       ${checkboxHtml}
       <span class="nt-th" style="${ntGrad(c.id)}"></span>
-      <span class="card-type-badge ${badgeClass}">${c.type}</span>
+      <span class="card-type-badge ${badgeClass}">${c.type === 'vuln' ? 'flaw' : c.type}</span>
       <div class="card-row-front" style="flex:1;">${md(front)}</div>
       ${isDue ? '<span class="card-due-tag">due</span>' : ''}
       <div class="card-row-btns" onclick="event.stopPropagation()">
@@ -1948,75 +1998,6 @@ function openRenameFolderModal(id) {
   input.onkeydown = e => { if (e.key === 'Enter') saveFolder(); };
 }
 function closeFolderModal() { document.getElementById('folder-overlay').classList.remove('open'); }
-
-// ─── IMPORT SURAH (bulk ayah-continuation card generation) ────────────────────
-function slugify(s) { return (s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
-
-function openSurahModal() {
-  const sel = document.getElementById('surah-deck-select');
-  sel.innerHTML = state.decks.map(d => `<option value="${d.id}"${d.id === activeDeckId ? ' selected' : ''}>${esc(d.name)}</option>`).join('') || '<option value="">— create a deck first —</option>';
-  document.getElementById('surah-name-input').value = '';
-  document.getElementById('surah-verses-input').value = '';
-  document.getElementById('surah-overlay').classList.add('open');
-  setTimeout(() => document.getElementById('surah-name-input').focus(), 50);
-}
-function closeSurahModal() { document.getElementById('surah-overlay').classList.remove('open'); }
-
-function generateSurahCards() {
-  const deckId = document.getElementById('surah-deck-select').value;
-  const surahName = document.getElementById('surah-name-input').value.trim();
-  const verses = document.getElementById('surah-verses-input').value.split('\n').map(v => v.trim()).filter(Boolean);
-
-  if (!deckId) { alert('Create or select a deck first.'); return; }
-  if (!surahName) { document.getElementById('surah-name-input').style.borderColor = 'var(--red)'; return; }
-  if (verses.length < 2) { document.getElementById('surah-verses-input').style.borderColor = 'var(--red)'; alert('Paste at least 2 verses — a card is generated per consecutive pair.'); return; }
-
-  const tag = 'quran::' + slugify(surahName);
-  const allWords = [...new Set(verses.flatMap(v => v.split(/\s+/)))];
-
-  for (let i = 0; i < verses.length - 1; i++) {
-    const nextWords = verses[i + 1].split(/\s+/).filter(Boolean);
-    const decoyPool = allWords.filter(w => !nextWords.includes(w));
-    const decoys = shuffleArr(decoyPool).slice(0, Math.min(3, decoyPool.length));
-    state.cards.push({
-      id: 'c_' + Date.now() + '_' + i,
-      deckId, type: 'ayah',
-      ayahRef: `${surahName} ${i + 1}→${i + 2}`,
-      ayahPrompt: verses[i],
-      ayahWords: nextWords,
-      ayahDecoys: decoys,
-      ayahOrderIdx: i,
-      interval: 1, due: Date.now(), ease: 2.5, reps: 0,
-      tags: [tag]
-    });
-  }
-
-  save();
-  closeSurahModal();
-  if (activeDeckId === deckId) renderDeckMain();
-  renderSidebar();
-  alert(`Generated ${verses.length - 1} card${verses.length - 1 !== 1 ? 's' : ''}, tagged "${tag}".`);
-}
-function saveFolder() {
-  const name = document.getElementById('folder-name-input').value.trim();
-  if (!name) return;
-  if (editingFolderId) {
-    const f = state.folders.find(x => x.id === editingFolderId);
-    if (f) f.name = name;
-    editingFolderId = null;
-    save(); closeFolderModal(); renderSidebar();
-    // refresh the folder name shown above the deck title, but never clobber an in-progress review
-    if (activeDeckId && !document.getElementById('rev-del-btn')) renderDeckMain();
-    return;
-  }
-  state.folders.push({ id: 'folder_' + Date.now(), name, collapsed: false });
-  save(); closeFolderModal(); renderSidebar();
-}
-function deleteFolder(id) {
-  state.decks.forEach(d => { if (d.folderId === id) d.folderId = null; });
-  state.folders = state.folders.filter(f => f.id !== id);
-  save(); renderSidebar();
-}
 
 // ─── DECK CRUD ────────────────────────────────────────────────────────────────
 function populateFolderSelect(selectedId) {
@@ -2119,11 +2100,14 @@ function openCardEditor(cardId) {
       document.getElementById('ecli-hint').value = c.cliHint || '';
       document.getElementById('ecli-note').value = c.cliNote || '';
       updateCliEditorMode();
-    } else if (c.type === 'ayah') {
-      document.getElementById('eayah-ref').value = c.ayahRef || '';
-      document.getElementById('eayah-prompt').value = c.ayahPrompt || '';
-      document.getElementById('eayah-continuation').value = (c.ayahWords || []).join(' ');
-      document.getElementById('eayah-decoys').value = (c.ayahDecoys || []).join(' ');
+    } else if (c.type === 'vuln') {
+      document.getElementById('evuln-prompt').value = c.vulnPrompt || '';
+      document.getElementById('evuln-lang').value = c.vulnLang || 'javascript';
+      document.getElementById('evuln-code').value = c.vulnCode || '';
+      document.getElementById('evuln-why').value = c.vulnWhy || '';
+      document.getElementById('evuln-fix').value = c.vulnFix || '';
+      vulnPicked = new Set(c.vulnLines || []);
+      renderVulnPicker();
     } else {
       document.getElementById('ec').value = c.clozeText || '';
       document.getElementById('ecq').value = questionsToText(c.questions);
@@ -2146,16 +2130,18 @@ function openCardEditor(cardId) {
     updateCliEditorMode();
     document.getElementById('ecli-hint').value = '';
     document.getElementById('ecli-note').value = '';
-    document.getElementById('eayah-ref').value = '';
-    document.getElementById('eayah-prompt').value = '';
-    document.getElementById('eayah-continuation').value = '';
-    document.getElementById('eayah-decoys').value = '';
+    document.getElementById('evuln-prompt').value = '';
+    document.getElementById('evuln-code').value = '';
+    document.getElementById('evuln-why').value = '';
+    document.getElementById('evuln-fix').value = '';
+    vulnPicked = new Set();
+    renderVulnPicker();
     currentEditorTags = [];
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
   if (cardType === 'code') refreshCodeAnswerHighlight();
-  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'ayah' ? 'eayah-prompt' : 'ef';
+  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'vuln' ? 'evuln-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
@@ -2182,13 +2168,14 @@ function updateCliEditorMode() {
 
 function setCardType(t) {
   cardType = t;
-  ['basic','cloze','code','cli','ayah'].forEach(x => {
+  ['basic','cloze','code','cli','vuln'].forEach(x => {
     const btn = document.getElementById('etype-' + x);
     const fields = document.getElementById(x + '-fields');
     if (btn) btn.classList.toggle('active', x === t);
     if (fields) fields.style.display = x === t ? 'block' : 'none';
   });
   if (t === 'cli') updateCliEditorMode();
+  if (t === 'vuln') renderVulnPicker();
   if (t === 'code') {
     attachHighlightSync('ecode-answer', 'ecode-answer-highlight', () => document.getElementById('ecode-lang').value);
   }
@@ -2345,19 +2332,21 @@ function saveCard() {
       if (cliSteps) card.cliSteps = cliSteps;
       state.cards.push(card);
     }
-  } else if (cardType === 'ayah') {
-    const ayahRef = document.getElementById('eayah-ref').value.trim();
-    const ayahPrompt = document.getElementById('eayah-prompt').value.trim();
-    const ayahWords = document.getElementById('eayah-continuation').value.trim().split(/\s+/).filter(Boolean);
-    const ayahDecoys = document.getElementById('eayah-decoys').value.trim().split(/\s+/).filter(Boolean);
-    document.getElementById('eayah-prompt').style.borderColor = ayahPrompt ? '' : 'var(--red)';
-    document.getElementById('eayah-continuation').style.borderColor = ayahWords.length ? '' : 'var(--red)';
-    if (!ayahPrompt || !ayahWords.length) return;
+  } else if (cardType === 'vuln') {
+    const vulnCode = document.getElementById('evuln-code').value.replace(/\s+$/, '').replace(/^\n+/, '');
+    const vulnLines = [...vulnPicked].filter(i => i < vulnCode.split('\n').length).sort((a, b) => a - b);
+    const vulnPrompt = document.getElementById('evuln-prompt').value.trim() || 'Find the vulnerability in this code';
+    const vulnLang = document.getElementById('evuln-lang').value;
+    const vulnWhy = document.getElementById('evuln-why').value.trim();
+    const vulnFix = document.getElementById('evuln-fix').value.replace(/\s+$/, '').replace(/^\n+/, '');
+    document.getElementById('evuln-code').style.borderColor = vulnCode.trim() ? '' : 'var(--red)';
+    document.getElementById('evuln-pick').style.outline = vulnLines.length ? '' : '2px solid var(--red)';
+    if (!vulnCode.trim() || !vulnLines.length) return;
     if (editingCardId) {
       const c = state.cards.find(x => x.id === editingCardId);
-      if (c) { c.ayahRef = ayahRef; c.ayahPrompt = ayahPrompt; c.ayahWords = ayahWords; c.ayahDecoys = ayahDecoys; c.type = 'ayah'; c.tags = [...currentEditorTags]; }
+      if (c) { Object.assign(c, { type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, tags: [...currentEditorTags] }); }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'ayah', ayahRef, ayahPrompt, ayahWords, ayahDecoys, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   }
   save();
@@ -2663,9 +2652,7 @@ function startReview(all, sequential) {
   if (activeTagFilter) pool = pool.filter(c => tagMatches(c.tags, activeTagFilter));
   pool = pool.filter(c => all || c.due <= Date.now());
   revQueue = [...pool];
-  if (sequential) {
-    revQueue.sort((a, b) => (a.ayahOrderIdx ?? Infinity) - (b.ayahOrderIdx ?? Infinity));
-  } else {
+  if (!sequential) {   // "Review in order" keeps the deck's order; everything else is shuffled
     for (let i = revQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [revQueue[i],revQueue[j]]=[revQueue[j],revQueue[i]]; }
   }
   revIdx = 0; revFlipped = false; revResults = { again:0, hard:0, good:0, easy:0 };
@@ -2680,7 +2667,7 @@ function renderRevCard() {
   if (card.type === 'cloze') renderClozeRev(main, card, pct);
   else if (card.type === 'code') renderCodeRev(main, card, pct);
   else if (card.type === 'cli') renderCliRev(main, card, pct);
-  else if (card.type === 'ayah') renderAyahRev(main, card, pct);
+  else if (card.type === 'vuln') renderVulnRev(main, card, pct);
   else renderFlipRev(main, card, pct);
 }
 
@@ -3757,97 +3744,6 @@ function checkCliMatch(typed, card) {
   return null;
 }
 
-// ─── AYAH CONTINUATION REVIEW (tap-to-arrange tiles, no typing) ───────────────
-let ayahTiles = [];      // { word, placed }
-let ayahOrder = [];      // indices into ayahTiles, in the order tapped
-
-function shuffleArr(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a;
-}
-
-function renderAyahRev(main, card, pct) {
-  const words = (card.ayahWords || []).map((w, i) => ({ word: w, correctIdx: i, decoy: false }));
-  const decoys = (card.ayahDecoys || []).map(w => ({ word: w, correctIdx: -1, decoy: true }));
-  const shuffled = shuffleArr([...words, ...decoys]);
-  ayahTiles = shuffled;
-  ayahOrder = [];
-
-  main.innerHTML = `<div class="review-wrap fs-md">
-    ${progressHTML(pct)}
-    <div class="ayah-prompt-box">
-      ${card.ayahRef ? `<div class="ayah-ref-label">${esc(card.ayahRef)}</div>` : ''}
-      <div class="ayah-arabic-text">${esc(card.ayahPrompt || '')}</div>
-    </div>
-    <div class="ayah-answer-row empty" id="ayah-answer-row"></div>
-    <div class="ayah-bank" id="ayah-bank"></div>
-    <div class="feedback-row" style="margin-top:2px;">
-      <span class="feedback" id="ayah-feedback"></span>
-    </div>
-    <button class="btn-check" id="ayah-check-btn" onclick="checkAyah()" style="margin-bottom:14px;">Check answer</button>
-    ${ratingHTML(card)}
-  </div>`;
-
-  renderAyahBank();
-  renderAyahAnswerRow();
-}
-
-function renderAyahBank() {
-  const bank = document.getElementById('ayah-bank');
-  if (!bank) return;
-  bank.innerHTML = ayahTiles.map((t, i) =>
-    `<span class="ayah-tile${ayahOrder.includes(i) ? ' placed' : ''}" onclick="tapAyahTile(${i})">${esc(t.word)}</span>`
-  ).join('');
-}
-
-function renderAyahAnswerRow() {
-  const row = document.getElementById('ayah-answer-row');
-  if (!row) return;
-  row.classList.toggle('empty', ayahOrder.length === 0);
-  row.innerHTML = ayahOrder.map(i =>
-    `<span class="ayah-tile" onclick="untapAyahTile(${i})">${esc(ayahTiles[i].word)}</span>`
-  ).join('');
-}
-
-function tapAyahTile(i) {
-  if (ayahOrder.includes(i)) return;
-  ayahOrder.push(i);
-  renderAyahBank();
-  renderAyahAnswerRow();
-}
-
-function untapAyahTile(i) {
-  ayahOrder = ayahOrder.filter(x => x !== i);
-  renderAyahBank();
-  renderAyahAnswerRow();
-}
-
-function checkAyah() {
-  const card = revQueue[revIdx];
-  const typedWords = ayahOrder.map(i => ayahTiles[i].word);
-  const ok = typedWords.length === (card.ayahWords || []).length &&
-    typedWords.every((w, i) => w === card.ayahWords[i]);
-
-  document.querySelectorAll('#ayah-answer-row .ayah-tile').forEach((el, pos) => {
-    const tileIdx = ayahOrder[pos];
-    const isCorrectHere = !ayahTiles[tileIdx].decoy && ayahTiles[tileIdx].correctIdx === pos;
-    el.classList.add(isCorrectHere ? 'correct-flash' : 'wrong-flash');
-  });
-
-  const fb = document.getElementById('ayah-feedback');
-  if (ok) {
-    fb.textContent = '✓ correct';
-    fb.className = 'feedback ok';
-  } else {
-    fb.textContent = '✗ incorrect — correct order: ' + (card.ayahWords || []).join(' ');
-    fb.className = 'feedback bad';
-  }
-
-  document.getElementById('ayah-check-btn').style.display = 'none';
-  document.getElementById('rating-grid').classList.add('show');
-}
-
 // ── multi-step CLI cards: card.cliSteps = [[alternatives for step 1], [alternatives for step 2], ...]
 let cliStepIdx = 0, cliStepResults = [];
 
@@ -4017,6 +3913,100 @@ function checkCli(giveUp) {
   document.getElementById('rating-grid').classList.add('show');
 }
 
+// ─── SPOT THE FLAW ────────────────────────────────────────────────────────────
+// card.vulnCode, card.vulnLang, card.vulnLines = [0-based indexes of the flawed lines],
+// card.vulnPrompt, card.vulnWhy (shown after), card.vulnFix (optional fixed code)
+let vulnPicked = new Set();   // editor: lines marked as vulnerable
+let vulnPick = new Set(), vulnLocked = false;   // review: lines tapped so far
+
+// Code with line numbers; each line is highlighted on its own so a multi-line string can't break the markup.
+function vulnLinesHTML(code, lang, states, clickFn) {
+  return String(code || '').split('\n').map((ln, i) =>
+    `<div class="vl${states && states[i] ? ' ' + states[i] : ''}"${clickFn ? ` onclick="${clickFn}(${i})"` : ''}><span class="vn">${i + 1}</span><span class="vc">${highlightForLang(ln, lang) || ' '}</span></div>`
+  ).join('');
+}
+
+function renderVulnPicker() {
+  const el = document.getElementById('evuln-pick');
+  if (!el) return;
+  const code = document.getElementById('evuln-code').value.replace(/\s+$/, '').replace(/^\n+/, '');
+  const n = code ? code.split('\n').length : 0;
+  [...vulnPicked].forEach(i => { if (i >= n) vulnPicked.delete(i); });
+  const states = {}; vulnPicked.forEach(i => states[i] = 'sel');
+  el.style.outline = '';
+  el.innerHTML = n ? vulnLinesHTML(code, document.getElementById('evuln-lang').value, states, 'toggleVulnLine')
+                   : '<div class="vuln-empty">Type the code above, then click the vulnerable lines here.</div>';
+}
+
+function toggleVulnLine(i) {
+  if (vulnPicked.has(i)) vulnPicked.delete(i); else vulnPicked.add(i);
+  renderVulnPicker();
+}
+
+function renderVulnRev(main, card, pct) {
+  vulnPick = new Set(); vulnLocked = false;
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cq-box">
+      <div class="session-label">Spot the flaw · tap every vulnerable line</div>
+      <div class="cq-question">${md(card.vulnPrompt || 'Find the vulnerability in this code')}</div>
+      <div class="vuln-code" id="vuln-code">${vulnLinesHTML(card.vulnCode, card.vulnLang, null, 'tapVulnLine')}</div>
+      <div class="feedback-row"><span class="feedback" id="vuln-fb"></span></div>
+      <div id="vuln-after"></div>
+      <button class="btn-check" id="vuln-check" disabled onclick="checkVuln()">Check lines</button>
+    </div>
+    ${ratingHTML(card)}
+  </div>`;
+}
+
+function tapVulnLine(i) {
+  if (vulnLocked) return;
+  if (vulnPick.has(i)) vulnPick.delete(i); else vulnPick.add(i);
+  const states = {}; vulnPick.forEach(k => states[k] = 'sel');
+  document.getElementById('vuln-code').innerHTML = vulnLinesHTML(revQueue[revIdx].vulnCode, revQueue[revIdx].vulnLang, states, 'tapVulnLine');
+  const b = document.getElementById('vuln-check');
+  b.disabled = vulnPick.size === 0;
+  b.textContent = vulnPick.size ? `Check ${vulnPick.size} line${vulnPick.size !== 1 ? 's' : ''}` : 'Check lines';
+}
+
+function checkVuln() {
+  const card = revQueue[revIdx];
+  if (vulnLocked || !vulnPick.size) return;
+  vulnLocked = true;
+  const truth = new Set(card.vulnLines || []);
+  const found = [...vulnPick].filter(i => truth.has(i)), extra = [...vulnPick].filter(i => !truth.has(i)), missed = [...truth].filter(i => !vulnPick.has(i));
+  const states = {};
+  found.forEach(i => states[i] = 'ok'); extra.forEach(i => states[i] = 'bad'); missed.forEach(i => states[i] = 'miss');
+  document.getElementById('vuln-code').innerHTML = vulnLinesHTML(card.vulnCode, card.vulnLang, states, null);
+  const perfect = !extra.length && !missed.length;
+  const fb = document.getElementById('vuln-fb');
+  fb.textContent = perfect ? '✓ found it' : `✗ ${found.length}/${truth.size} flawed line${truth.size !== 1 ? 's' : ''} found` + (extra.length ? ` · ${extra.length} wrongly marked` : '');
+  fb.className = 'feedback ' + (perfect ? 'ok' : 'bad');
+  document.getElementById('vuln-check').style.display = 'none';
+  // next step: say how you'd fix it, then reveal the explanation and fixed code
+  document.getElementById('vuln-after').innerHTML = `
+    <div class="cq-points-label" style="margin-top:14px;">How would you fix it?</div>
+    <textarea class="editor-ta cq-ans" id="vuln-fixans" placeholder="Describe the fix in your own words…" spellcheck="false" style="min-height:80px;"></textarea>
+    <button class="btn-check" id="vuln-reveal" onclick="revealVuln()">Reveal fix · ⌘/Ctrl+Enter</button>`;
+  const ta = document.getElementById('vuln-fixans');
+  ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealVuln(); } };
+  setTimeout(() => ta.focus({ preventScroll: true }), 30);
+}
+
+function revealVuln() {
+  const card = revQueue[revIdx], ta = document.getElementById('vuln-fixans');
+  if (!ta || ta.readOnly) return;
+  ta.readOnly = true;
+  document.getElementById('vuln-reveal').style.display = 'none';
+  let html = '';
+  if (card.vulnWhy) html += `<div class="cq-points-label" style="margin-top:14px;">Why it's vulnerable</div><div class="vuln-why">${md(card.vulnWhy)}</div>`;
+  if (card.vulnFix) html += `<div class="cq-points-label" style="margin-top:14px;">Fixed version</div><div class="vuln-code">${vulnLinesHTML(card.vulnFix, card.vulnLang, null, null)}</div>`;
+  document.getElementById('vuln-after').insertAdjacentHTML('beforeend', html);
+  const grid = document.getElementById('rating-grid');
+  grid.classList.add('show');
+  grid.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
 function renderCodeRev(main, card, pct) {
   main.innerHTML = `<div class="review-wrap fs-md">
     ${progressHTML(pct)}
@@ -4167,7 +4157,7 @@ loadAppTheme();
 
   function cardTitle(c) {
     const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1')
-      : (c.front || c.codePrompt || c.cliPrompt || c.ayahPrompt || '');
+      : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || '');
     return t.replace(/\s+/g, ' ').trim().slice(0, 90);
   }
   function build() {
