@@ -168,6 +168,7 @@
   .type-code { background: var(--green-dim); color: var(--green); }
   .type-cli { background: var(--coral-dim); color: var(--coral); }
   .type-vuln { background: var(--red-dim); color: var(--red); }
+  .type-ab, .type-order { background: var(--bg-hover); color: var(--text-muted); }
 
 
   /* code recall review */
@@ -217,6 +218,35 @@
   .vuln-code .vl.ok::after { content: '✓ flaw'; color: #27c93f; }
   .vuln-code .vl.miss::after { content: 'missed'; color: #ffbd2e; }
   .vuln-code .vl.bad::after { content: 'not a flaw'; color: #ff5f56; }
+  .vuln-btnrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .vuln-fixans { font-family: 'JetBrains Mono', monospace !important; font-size: 13px !important; white-space: pre; min-height: 110px !important; }
+  .vuln-res { font-size: 13.5px; font-weight: 500; margin: 12px 0 4px; line-height: 1.5; }
+  .vuln-res.ok { color: var(--green); } .vuln-res.near { color: #d98e04; } .vuln-res.bad { color: var(--red); }
+  .ab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 6px 0 14px; align-items: start; }
+  @media (max-width: 900px) { .ab-grid { grid-template-columns: 1fr; } }
+  .ab-opt { border: 1px solid var(--border); border-radius: 16px; padding: 12px; min-width: 0; }
+  .ab-opt.ok { border-color: #27c93f; box-shadow: 0 0 0 1px #27c93f; }
+  .ab-opt.bad { border-color: #ff5f56; box-shadow: 0 0 0 1px #ff5f56; }
+  .ab-opt-head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .ab-opt.ok .ab-verdict { color: #27c93f; } .ab-opt.bad .ab-verdict { color: #ff5f56; }
+  .ab-opt .vuln-code { margin: 0 0 10px; }
+  .ab-pick { width: 100%; }
+  .ord-answer { min-height: 56px; }
+  .ord-empty { padding: 14px 18px; color: #6e7681; font-family: 'Inter', sans-serif; font-size: 13px; font-style: italic; }
+  .ord-row .vc { min-width: 0; }
+  .ord-ctl { margin-left: auto; display: flex; gap: 4px; padding-left: 16px; }
+  .ord-ctl button { background: rgba(255,255,255,.09); color: #c9d1d9; border: 0; border-radius: 6px; width: 28px; height: 22px; cursor: pointer; font-size: 12px; line-height: 1; }
+  .ord-ctl button:hover:not(:disabled) { background: rgba(255,255,255,.2); } .ord-ctl button:disabled { opacity: .3; cursor: default; }
+  .ord-bank { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 14px; }
+  .ord-tile { text-align: left; background: #0d1117; color: #c9d1d9; border: 1px solid var(--border-strong, #333); border-radius: 10px; padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px; cursor: pointer; white-space: pre; overflow-x: auto; }
+  .ord-tile:hover { border-color: #58a6ff; }
+  .ord-done { font-size: 13px; color: var(--text-faint); padding: 6px 2px; }
+  .vuln-code .vl.right { background: rgba(39,201,63,.18); border-left-color: #27c93f; }
+  .vuln-code .vl.wrong, .vuln-code .vl.extra { background: rgba(255,95,86,.16); border-left-color: #ff5f56; }
+  .vuln-code .vl.right::after, .vuln-code .vl.wrong::after, .vuln-code .vl.extra::after { font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600; margin-left: 24px; white-space: nowrap; }
+  .vuln-code .vl.right::after { content: '✓'; color: #27c93f; }
+  .vuln-code .vl.wrong::after { content: '✗ wrong place'; color: #ff5f56; }
+  .vuln-code .vl.extra::after { content: "✗ doesn't belong"; color: #ff5f56; }
   .vuln-empty { padding: 10px 16px; color: #6e7681; font-family: 'Inter', sans-serif; font-size: 13px; }
   .vuln-why { font-size: 14.5px; line-height: 1.6; margin-bottom: 6px; }
   .vuln-why p { margin: 0 0 6px; }
@@ -1032,6 +1062,8 @@ body:not(.dark) .review-wrap{position:relative}
       <button class="type-btn" id="etype-code" onclick="setCardType('code')">Code recall</button>
       <button class="type-btn" id="etype-cli" onclick="setCardType('cli')">CLI recall</button>
       <button class="type-btn" id="etype-vuln" onclick="setCardType('vuln')">Spot the flaw</button>
+      <button class="type-btn" id="etype-ab" onclick="setCardType('ab')">Secure or insecure?</button>
+      <button class="type-btn" id="etype-order" onclick="setCardType('order')">Put in order</button>
     </div>
 
     <!-- BASIC -->
@@ -1106,8 +1138,54 @@ body:not(.dark) .review-wrap{position:relative}
       <div class="vuln-code" id="evuln-pick"></div>
       <div class="field-label">Why it's vulnerable <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you answer)</span></div>
       <textarea class="editor-ta" id="evuln-why" placeholder="User input is concatenated into the SQL string, so an attacker can change the query (SQL injection)." onkeydown="taKey(event,'evuln-why')" style="min-height:70px;"></textarea>
-      <div class="field-label">Fixed version <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <div class="field-label">Fixed version <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional — if you add one, review asks you to type the fix and compares it)</span></div>
       <textarea class="editor-ta" id="evuln-fix" spellcheck="false" placeholder="db.query(&quot;SELECT * FROM users WHERE id = ?&quot;, [req.query.id]);" style="min-height:80px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+    </div>
+
+    <!-- SECURE OR INSECURE -->
+    <div id="ab-fields" style="display:none;">
+      <div class="field-label">Prompt <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <input class="text-input" id="eab-prompt" type="text" placeholder="Which version is secure?" />
+      <div class="field-label">Language</div>
+      <select class="text-input" id="eab-lang" style="margin-bottom:16px;cursor:pointer;">
+        <option value="javascript">JavaScript</option>
+        <option value="php">PHP</option>
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="sql">SQL</option>
+        <option value="bash">Bash</option>
+        <option value="other">Other</option>
+      </select>
+      <div class="field-label">Secure version</div>
+      <textarea class="editor-ta" id="eab-secure" spellcheck="false" placeholder="cur.execute(&quot;SELECT * FROM users WHERE name = ?&quot;, (name,))" style="min-height:90px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Insecure version</div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">The two are shown side by side in a random order during review.</div>
+      <textarea class="editor-ta" id="eab-insecure" spellcheck="false" placeholder="cur.execute(f&quot;SELECT * FROM users WHERE name = '{name}'&quot;)" style="min-height:90px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Why <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you answer — optional)</span></div>
+      <textarea class="editor-ta" id="eab-why" placeholder="The insecure version builds the query from user input, so the input can change the query (SQL injection)." onkeydown="taKey(event,'eab-why')" style="min-height:70px;"></textarea>
+    </div>
+
+    <!-- PUT IN ORDER -->
+    <div id="order-fields" style="display:none;">
+      <div class="field-label">Prompt <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <input class="text-input" id="eorder-prompt" type="text" placeholder="Put these lines in the correct order" />
+      <div class="field-label">Language</div>
+      <select class="text-input" id="eorder-lang" style="margin-bottom:16px;cursor:pointer;">
+        <option value="javascript">JavaScript</option>
+        <option value="php">PHP</option>
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="sql">SQL</option>
+        <option value="bash">Bash</option>
+        <option value="other">Other</option>
+      </select>
+      <div class="field-label">Lines in the correct order</div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">One line each. Blank lines are skipped. Indentation is shown in the answer, but only the order is checked.</div>
+      <textarea class="editor-ta" id="eorder-code" spellcheck="false" placeholder="def save(name):&#10;    clean = validate(name)&#10;    safe = escape(clean)&#10;    db.insert(safe)" style="min-height:110px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Extra lines that don't belong <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional distractors)</span></div>
+      <textarea class="editor-ta" id="eorder-extra" spellcheck="false" placeholder="db.insert(name)" style="min-height:60px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Note <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you check — optional)</span></div>
+      <textarea class="editor-ta" id="eorder-note" placeholder="Validate first, then escape for the place the data is going, then store." onkeydown="taKey(event,'eorder-note')" style="min-height:60px;"></textarea>
     </div>
 
     <!-- CODE RECALL -->
@@ -1590,7 +1668,7 @@ function olArt(seed) {
 }
 function olText(c) {
   const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)(::.*?)?\}\}/g, '[…]')
-    : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || '');
+    : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || '');
   return String(t).replace(/<[^>]+>/g, ' ').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim() || '(empty card)';
 }
 
@@ -1734,6 +1812,8 @@ function cardSearchText(c) {
   if (c.type === 'cloze') return (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1');
   if (c.type === 'code') return (c.codePrompt || '') + ' ' + (c.codeAnswer || '');
   if (c.type === 'cli') return (c.cliPrompt || '') + ' ' + (c.cliAnswers || []).join(' ');
+  if (c.type === 'ab') return (c.abPrompt || '') + ' ' + (c.abSecure || '') + ' ' + (c.abInsecure || '') + ' ' + (c.abWhy || '');
+  if (c.type === 'order') return (c.orderPrompt || '') + ' ' + (c.orderLines || []).join(' ') + ' ' + (c.orderExtra || []).join(' ') + ' ' + (c.orderNote || '');
   if (c.type === 'vuln') return (c.vulnPrompt || '') + ' ' + (c.vulnCode || '') + ' ' + (c.vulnWhy || '') + ' ' + (c.vulnFix || '');
   return (c.front || '') + ' ' + (c.back || '');
 }
@@ -1943,8 +2023,12 @@ function cardRow(c) {
     ? (c.cliPrompt || '').slice(0, 120) + (isCliMulti(c) ? ` · ${c.cliSteps.length} steps` : '')
     : c.type === 'vuln'
     ? (c.vulnPrompt || 'Spot the flaw').slice(0, 80) + ' · ' + ((c.vulnCode || '').split('\n').find(l => l.trim()) || '').trim().slice(0, 50)
+    : c.type === 'ab'
+    ? (c.abPrompt || 'Secure or insecure?').slice(0, 80) + ' · ' + ((c.abSecure || '').split('\n').find(l => l.trim()) || '').trim().slice(0, 40)
+    : c.type === 'order'
+    ? (c.orderPrompt || 'Put in order').slice(0, 80) + ` · ${(c.orderLines || []).length} lines`
     : (c.front || '').slice(0,120);
-  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'vuln' ? 'type-vuln' : 'type-basic';
+  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'vuln' ? 'type-vuln' : c.type === 'ab' ? 'type-ab' : c.type === 'order' ? 'type-order' : 'type-basic';
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
     ? `<div class="card-tags-row">${tags.map(t => {
@@ -1962,7 +2046,7 @@ function cardRow(c) {
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%;">
       ${checkboxHtml}
       <span class="nt-th" style="${ntGrad(c.id)}"></span>
-      <span class="card-type-badge ${badgeClass}">${c.type === 'vuln' ? 'flaw' : c.type}</span>
+      <span class="card-type-badge ${badgeClass}">${({ vuln: 'flaw', ab: 'A/B', order: 'order' })[c.type] || c.type}</span>
       <div class="card-row-front" style="flex:1;">${md(front)}</div>
       ${isDue ? '<span class="card-due-tag">due</span>' : ''}
       <div class="card-row-btns" onclick="event.stopPropagation()">
@@ -2108,6 +2192,18 @@ function openCardEditor(cardId) {
       document.getElementById('evuln-fix').value = c.vulnFix || '';
       vulnPicked = new Set(c.vulnLines || []);
       renderVulnPicker();
+    } else if (c.type === 'ab') {
+      document.getElementById('eab-prompt').value = c.abPrompt || '';
+      document.getElementById('eab-lang').value = c.abLang || 'javascript';
+      document.getElementById('eab-secure').value = c.abSecure || '';
+      document.getElementById('eab-insecure').value = c.abInsecure || '';
+      document.getElementById('eab-why').value = c.abWhy || '';
+    } else if (c.type === 'order') {
+      document.getElementById('eorder-prompt').value = c.orderPrompt || '';
+      document.getElementById('eorder-lang').value = c.orderLang || 'python';
+      document.getElementById('eorder-code').value = (c.orderLines || []).join('\n');
+      document.getElementById('eorder-extra').value = (c.orderExtra || []).join('\n');
+      document.getElementById('eorder-note').value = c.orderNote || '';
     } else {
       document.getElementById('ec').value = c.clozeText || '';
       document.getElementById('ecq').value = questionsToText(c.questions);
@@ -2136,12 +2232,13 @@ function openCardEditor(cardId) {
     document.getElementById('evuln-fix').value = '';
     vulnPicked = new Set();
     renderVulnPicker();
+    ['eab-prompt','eab-secure','eab-insecure','eab-why','eorder-prompt','eorder-code','eorder-extra','eorder-note'].forEach(id => document.getElementById(id).value = '');
     currentEditorTags = [];
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
   if (cardType === 'code') refreshCodeAnswerHighlight();
-  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'vuln' ? 'evuln-prompt' : 'ef';
+  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'vuln' ? 'evuln-prompt' : cardType === 'ab' ? 'eab-prompt' : cardType === 'order' ? 'eorder-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
@@ -2168,7 +2265,7 @@ function updateCliEditorMode() {
 
 function setCardType(t) {
   cardType = t;
-  ['basic','cloze','code','cli','vuln'].forEach(x => {
+  ['basic','cloze','code','cli','vuln','ab','order'].forEach(x => {
     const btn = document.getElementById('etype-' + x);
     const fields = document.getElementById(x + '-fields');
     if (btn) btn.classList.toggle('active', x === t);
@@ -2347,6 +2444,40 @@ function saveCard() {
       if (c) { Object.assign(c, { type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, tags: [...currentEditorTags] }); }
     } else {
       state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else if (cardType === 'ab') {
+    const trimCode = v => v.replace(/\s+$/, '').replace(/^\n+/, '');
+    const abSecure = trimCode(document.getElementById('eab-secure').value);
+    const abInsecure = trimCode(document.getElementById('eab-insecure').value);
+    const abPrompt = document.getElementById('eab-prompt').value.trim() || 'Which version is secure?';
+    const abLang = document.getElementById('eab-lang').value;
+    const abWhy = document.getElementById('eab-why').value.trim();
+    const same = abSecure.trim() && abSecure.trim() === abInsecure.trim();
+    document.getElementById('eab-secure').style.borderColor = abSecure.trim() && !same ? '' : 'var(--red)';
+    document.getElementById('eab-insecure').style.borderColor = abInsecure.trim() && !same ? '' : 'var(--red)';
+    if (!abSecure.trim() || !abInsecure.trim() || same) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) Object.assign(c, { type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, tags: [...currentEditorTags] });
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else if (cardType === 'order') {
+    let orderLines = document.getElementById('eorder-code').value.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim());
+    const indents = orderLines.map(l => l.match(/^\s*/)[0].length);
+    const cut = indents.length ? Math.min(...indents) : 0;
+    orderLines = orderLines.map(l => l.slice(cut));        // drop indentation shared by every line
+    const orderExtra = document.getElementById('eorder-extra').value.split('\n').map(l => l.trim()).filter(Boolean);
+    const orderPrompt = document.getElementById('eorder-prompt').value.trim() || 'Put these lines in the correct order';
+    const orderLang = document.getElementById('eorder-lang').value;
+    const orderNote = document.getElementById('eorder-note').value.trim();
+    document.getElementById('eorder-code').style.borderColor = orderLines.length >= 2 ? '' : 'var(--red)';
+    if (orderLines.length < 2) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) Object.assign(c, { type: 'order', orderPrompt, orderLang, orderLines, orderExtra, orderNote, tags: [...currentEditorTags] });
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'order', orderPrompt, orderLang, orderLines, orderExtra, orderNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   }
   save();
@@ -2668,6 +2799,8 @@ function renderRevCard() {
   else if (card.type === 'code') renderCodeRev(main, card, pct);
   else if (card.type === 'cli') renderCliRev(main, card, pct);
   else if (card.type === 'vuln') renderVulnRev(main, card, pct);
+  else if (card.type === 'ab') renderAbRev(main, card, pct);
+  else if (card.type === 'order') renderOrderRev(main, card, pct);
   else renderFlipRev(main, card, pct);
 }
 
@@ -3969,6 +4102,48 @@ function tapVulnLine(i) {
   b.textContent = vulnPick.size ? `Check ${vulnPick.size} line${vulnPick.size !== 1 ? 's' : ''}` : 'Check lines';
 }
 
+// ── comparing a typed fix with the reference fix (language-neutral): compare tokens, ignoring
+// whitespace, comments, quote style and trailing semicolons.
+const CODE_TOKEN_REST = /("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\$?[A-Za-z_]\w*|\d+\.?\d*)|(\S)/.source;
+function codeTokens(raw, lang) {
+  const l = (lang || '').toLowerCase();
+  const cfg = HL_LANGS[l];
+  const cm = (l === 'python' || l === 'py') ? '#[^\\n]*' : (cfg ? cfg.cm : '//[^\\n]*|#[^\\n]*');
+  const re = new RegExp('(' + cm + ')|' + CODE_TOKEN_REST, 'g');
+  const dropSemi = ['javascript', 'js', 'typescript', 'ts', 'php', 'java', 'sql'].includes(l);
+  const out = []; let m;
+  while ((m = re.exec(raw)) !== null && out.length < 800) {
+    if (m[1]) continue;                                  // comment
+    if (m[2]) out.push('S:' + m[2].slice(1, -1));        // string, quote style ignored
+    else if (m[3]) out.push(m[3]);                       // identifier / number
+    else if (m[4] && !(dropSemi && m[4] === ';')) out.push(m[4]);
+  }
+  return out;
+}
+// 1 = identical tokens, otherwise the share of tokens two snippets have in common (max 0.99)
+function fixSimilarity(typed, expected, lang) {
+  const a = codeTokens(typed, lang), b = codeTokens(expected, lang);
+  if (!a.length || !b.length) return 0;
+  if (a.length === b.length && a.every((t, i) => t === b[i])) return 1;
+  let prev = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [0];
+    for (let j = 1; j <= b.length; j++) cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]);
+    prev = cur;
+  }
+  return Math.min(0.99, 2 * prev[b.length] / (a.length + b.length));
+}
+
+// Tab inserts spaces inside code boxes instead of leaving the box
+function codeBoxKey(e, onSubmit) {
+  if (e.key === 'Tab' && !e.shiftKey) {
+    e.preventDefault();
+    const t = e.target, s = t.selectionStart;
+    t.value = t.value.slice(0, s) + '    ' + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = s + 4;
+  } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onSubmit(); }
+}
+
 function checkVuln() {
   const card = revQueue[revIdx];
   if (vulnLocked || !vulnPick.size) return;
@@ -3983,28 +4158,202 @@ function checkVuln() {
   fb.textContent = perfect ? '✓ found it' : `✗ ${found.length}/${truth.size} flawed line${truth.size !== 1 ? 's' : ''} found` + (extra.length ? ` · ${extra.length} wrongly marked` : '');
   fb.className = 'feedback ' + (perfect ? 'ok' : 'bad');
   document.getElementById('vuln-check').style.display = 'none';
-  // next step: say how you'd fix it, then reveal the explanation and fixed code
-  document.getElementById('vuln-after').innerHTML = `
+  // next: write the fix (compared with the reference) if the card has one, otherwise describe it
+  const typed = !!card.vulnFix;
+  document.getElementById('vuln-after').innerHTML = typed ? `
+    <div class="cq-points-label" style="margin-top:14px;">Now write the fix</div>
+    <textarea class="editor-ta cq-ans vuln-fixans" id="vuln-fixans" placeholder="Type the corrected code…" spellcheck="false"></textarea>
+    <div class="vuln-btnrow">
+      <button class="btn-check" id="vuln-reveal" onclick="revealVuln()">Check my fix · ⌘/Ctrl+Enter</button>
+      <button class="btn-secondary" id="vuln-skip" onclick="revealVuln(true)">Show fix instead</button>
+    </div>
+    <div id="vuln-fixres"></div>` : `
     <div class="cq-points-label" style="margin-top:14px;">How would you fix it?</div>
     <textarea class="editor-ta cq-ans" id="vuln-fixans" placeholder="Describe the fix in your own words…" spellcheck="false" style="min-height:80px;"></textarea>
-    <button class="btn-check" id="vuln-reveal" onclick="revealVuln()">Reveal fix · ⌘/Ctrl+Enter</button>`;
+    <button class="btn-check" id="vuln-reveal" onclick="revealVuln()">Reveal fix · ⌘/Ctrl+Enter</button>
+    <div id="vuln-fixres"></div>`;
   const ta = document.getElementById('vuln-fixans');
-  ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealVuln(); } };
+  ta.onkeydown = typed ? (e => codeBoxKey(e, () => revealVuln())) : (e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealVuln(); } });
   setTimeout(() => ta.focus({ preventScroll: true }), 30);
 }
 
-function revealVuln() {
+function revealVuln(skip) {
   const card = revQueue[revIdx], ta = document.getElementById('vuln-fixans');
   if (!ta || ta.readOnly) return;
+  if (card.vulnFix && skip !== true && !ta.value.trim()) { ta.focus(); return; }   // nothing typed yet
   ta.readOnly = true;
   document.getElementById('vuln-reveal').style.display = 'none';
+  const sk = document.getElementById('vuln-skip'); if (sk) sk.style.display = 'none';
+  const res = document.getElementById('vuln-fixres');
+  if (card.vulnFix && skip !== true) {
+    const sim = fixSimilarity(ta.value, card.vulnFix, card.vulnLang), pct = Math.round(sim * 100);
+    res.innerHTML = sim >= 1 ? '<div class="vuln-res ok">✓ your fix matches the reference</div>'
+      : sim >= 0.75 ? `<div class="vuln-res near">≈ close — ${pct}% of the code matches the reference. Another valid fix is possible; compare below.</div>`
+      : `<div class="vuln-res bad">✗ different from the reference (${pct}% match). Other valid fixes exist; compare below and rate yourself.</div>`;
+  } else if (card.vulnFix) res.innerHTML = '<div class="vuln-res">You skipped writing the fix.</div>';
   let html = '';
   if (card.vulnWhy) html += `<div class="cq-points-label" style="margin-top:14px;">Why it's vulnerable</div><div class="vuln-why">${md(card.vulnWhy)}</div>`;
-  if (card.vulnFix) html += `<div class="cq-points-label" style="margin-top:14px;">Fixed version</div><div class="vuln-code">${vulnLinesHTML(card.vulnFix, card.vulnLang, null, null)}</div>`;
+  if (card.vulnFix) html += `<div class="cq-points-label" style="margin-top:14px;">Reference fix</div><div class="vuln-code">${vulnLinesHTML(card.vulnFix, card.vulnLang, null, null)}</div>`;
   document.getElementById('vuln-after').insertAdjacentHTML('beforeend', html);
   const grid = document.getElementById('rating-grid');
   grid.classList.add('show');
   grid.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ─── SECURE OR INSECURE? ──────────────────────────────────────────────────────
+// card.abSecure / card.abInsecure (code), card.abLang, card.abPrompt, card.abWhy
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+let abSides = [], abAnswered = false;
+
+function renderAbRev(main, card, pct) {
+  abAnswered = false;
+  const swap = Math.random() < 0.5;   // which side the secure version appears on is random, so position never gives it away
+  abSides = swap ? [{ secure: false, code: card.abInsecure }, { secure: true, code: card.abSecure }]
+                 : [{ secure: true, code: card.abSecure }, { secure: false, code: card.abInsecure }];
+  const L = ['A', 'B'];
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cq-box">
+      <div class="session-label">Secure or insecure? · pick the safe version</div>
+      <div class="cq-question">${md(card.abPrompt || 'Which version is secure?')}</div>
+      <div class="ab-grid">${abSides.map((sd, i) => `<div class="ab-opt" id="ab-opt-${i}">
+        <div class="ab-opt-head"><span>Option ${L[i]}</span><span class="ab-verdict" id="ab-verdict-${i}"></span></div>
+        <div class="vuln-code">${vulnLinesHTML(sd.code, card.abLang, null, null)}</div>
+        <button class="btn-secondary ab-pick" id="ab-pick-${i}" onclick="pickAb(${i})">${L[i]} is secure</button>
+      </div>`).join('')}</div>
+      <div class="feedback-row"><span class="feedback" id="ab-fb"></span></div>
+      <div id="ab-after"></div>
+    </div>
+    ${ratingHTML(card)}
+  </div>`;
+}
+
+function pickAb(i) {
+  if (abAnswered) return;
+  abAnswered = true;
+  const card = revQueue[revIdx], L = ['A', 'B'];
+  const right = abSides[i].secure, secureIdx = abSides.findIndex(x => x.secure);
+  abSides.forEach((sd, k) => {
+    document.getElementById('ab-opt-' + k).classList.add(sd.secure ? 'ok' : 'bad');
+    document.getElementById('ab-verdict-' + k).textContent = sd.secure ? '✓ secure' : '✗ insecure';
+    document.getElementById('ab-pick-' + k).style.display = 'none';
+  });
+  const fb = document.getElementById('ab-fb');
+  fb.textContent = right ? `✓ correct — ${L[secureIdx]} is the secure version` : `✗ not quite — ${L[secureIdx]} is the secure version`;
+  fb.className = 'feedback ' + (right ? 'ok' : 'bad');
+  if (card.abWhy) {
+    document.getElementById('ab-after').innerHTML = `
+      <div class="cq-points-label" style="margin-top:14px;">Why is the other one insecure?</div>
+      <textarea class="editor-ta cq-ans" id="ab-whyans" placeholder="Say it in your own words…" spellcheck="false" style="min-height:80px;"></textarea>
+      <button class="btn-check" id="ab-reveal" onclick="revealAb()">Reveal explanation · ⌘/Ctrl+Enter</button>`;
+    const ta = document.getElementById('ab-whyans');
+    ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); revealAb(); } };
+    setTimeout(() => ta.focus({ preventScroll: true }), 30);
+  } else showRatingGrid();
+}
+
+function revealAb() {
+  const card = revQueue[revIdx], ta = document.getElementById('ab-whyans');
+  if (!ta || ta.readOnly) return;
+  ta.readOnly = true;
+  document.getElementById('ab-reveal').style.display = 'none';
+  document.getElementById('ab-after').insertAdjacentHTML('beforeend', `<div class="cq-points-label" style="margin-top:14px;">Explanation</div><div class="vuln-why">${md(card.abWhy)}</div>`);
+  showRatingGrid();
+}
+
+function showRatingGrid() {
+  const grid = document.getElementById('rating-grid');
+  grid.classList.add('show');
+  grid.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ─── PUT IN ORDER ─────────────────────────────────────────────────────────────
+// card.orderLines (correct order, indentation kept), card.orderExtra (distractors), card.orderLang, card.orderNote
+// Only the order is checked, not indentation.
+let ordItems = [], ordBank = [], ordPlaced = [], ordStates = [], ordLocked = false;
+
+function renderOrderRev(main, card, pct) {
+  const lines = card.orderLines || [], extra = card.orderExtra || [];
+  ordItems = lines.map((raw, i) => ({ id: i, raw, t: raw.trim(), extra: false }))
+    .concat(extra.map((raw, j) => ({ id: lines.length + j, raw, t: raw.trim(), extra: true })));
+  const solved = order => order.length >= lines.length && lines.every((l, i) => ordItems[order[i]].t === l.trim());
+  let order = ordItems.map(x => x.id);
+  for (let k = 0; k < 10; k++) { order = shuffleArray(order); if (!solved(order)) break; }   // never start already solved
+  ordBank = order; ordPlaced = []; ordStates = []; ordLocked = false;
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cq-box">
+      <div class="session-label">Put in order · tap a line to add it, then check</div>
+      <div class="cq-question">${md(card.orderPrompt || 'Put these lines in the correct order')}</div>
+      <div class="cq-points-label">Your answer</div>
+      <div class="vuln-code ord-answer" id="ord-answer"></div>
+      <div class="cq-points-label" id="ord-bank-label">Lines</div>
+      <div class="ord-bank" id="ord-bank"></div>
+      <div class="feedback-row"><span class="feedback" id="ord-fb"></span></div>
+      <div class="vuln-btnrow" id="ord-btns">
+        <button class="btn-check" id="ord-check" disabled onclick="checkOrder()">Check order</button>
+        <button class="btn-secondary" onclick="resetOrder()">Reset</button>
+      </div>
+      <div id="ord-after"></div>
+    </div>
+    ${ratingHTML(card)}
+  </div>`;
+  renderOrderBoard();
+}
+
+function renderOrderBoard() {
+  const card = revQueue[revIdx], lang = card.orderLang;
+  const hl = t => highlightForLang(t, lang) || ' ';
+  const n = ordPlaced.length;
+  document.getElementById('ord-answer').innerHTML = n ? ordPlaced.map((id, pos) => {
+    const it = ordItems[id];
+    const ctl = ordLocked ? '' : `<span class="ord-ctl"><button title="Move up" onclick="ordMove(${pos},-1)" ${pos === 0 ? 'disabled' : ''}>↑</button><button title="Move down" onclick="ordMove(${pos},1)" ${pos === n - 1 ? 'disabled' : ''}>↓</button><button title="Put back" onclick="ordRemove(${pos})">✕</button></span>`;
+    return `<div class="vl ord-row${ordStates[pos] ? ' ' + ordStates[pos] : ''}"><span class="vn">${pos + 1}</span><span class="vc">${hl(it.t)}</span>${ctl}</div>`;
+  }).join('') : '<div class="ord-empty">tap the lines below to build the code, top to bottom</div>';
+  const left = ordBank.filter(id => !ordPlaced.includes(id));
+  document.getElementById('ord-bank').innerHTML = ordLocked ? '' : left.map(id => `<button class="ord-tile" onclick="ordAdd(${id})">${hl(ordItems[id].t)}</button>`).join('')
+    || '<div class="ord-done">All lines placed — check your order, or move lines with ↑ ↓.</div>';
+  document.getElementById('ord-bank-label').style.display = ordLocked ? 'none' : '';
+  document.getElementById('ord-check').disabled = ordLocked || n === 0;
+}
+
+function ordAdd(id) { if (ordLocked || ordPlaced.includes(id)) return; ordPlaced.push(id); renderOrderBoard(); }
+function ordRemove(pos) { if (ordLocked) return; ordPlaced.splice(pos, 1); renderOrderBoard(); }
+function ordMove(pos, d) {
+  if (ordLocked) return;
+  const j = pos + d; if (j < 0 || j >= ordPlaced.length) return;
+  [ordPlaced[pos], ordPlaced[j]] = [ordPlaced[j], ordPlaced[pos]];
+  renderOrderBoard();
+}
+function resetOrder() { if (ordLocked) return; ordPlaced = []; renderOrderBoard(); }
+
+function checkOrder() {
+  const card = revQueue[revIdx];
+  if (ordLocked || !ordPlaced.length) return;
+  const sol = (card.orderLines || []).map(l => l.trim());
+  let right = 0;
+  ordStates = ordPlaced.map((id, pos) => {
+    const it = ordItems[id];
+    if (it.extra) return 'extra';
+    if (it.t === sol[pos]) { right++; return 'right'; }
+    return 'wrong';
+  });
+  ordLocked = true;
+  const perfect = ordPlaced.length === sol.length && right === sol.length;
+  renderOrderBoard();
+  document.getElementById('ord-btns').style.display = 'none';
+  const fb = document.getElementById('ord-fb');
+  fb.textContent = perfect ? '✓ correct order' : `✗ ${right}/${sol.length} line${sol.length !== 1 ? 's' : ''} in the right place` + (ordPlaced.some(id => ordItems[id].extra) ? " · a line that doesn't belong was used" : '');
+  fb.className = 'feedback ' + (perfect ? 'ok' : 'bad');
+  let html = '';
+  if (!perfect) html += `<div class="cq-points-label" style="margin-top:14px;">Correct order</div><div class="vuln-code">${vulnLinesHTML((card.orderLines || []).join('\n'), card.orderLang, null, null)}</div>`;
+  if (card.orderNote) html += `<div class="cq-points-label" style="margin-top:14px;">Note</div><div class="vuln-why">${md(card.orderNote)}</div>`;
+  document.getElementById('ord-after').innerHTML = html;
+  showRatingGrid();
 }
 
 function renderCodeRev(main, card, pct) {
@@ -4157,7 +4506,7 @@ loadAppTheme();
 
   function cardTitle(c) {
     const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1')
-      : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || '');
+      : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || '');
     return t.replace(/\s+/g, ' ').trim().slice(0, 90);
   }
   function build() {
