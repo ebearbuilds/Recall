@@ -1701,7 +1701,7 @@ function renderSidebar() {
     html += `<div>
       <div class="folder-row" onclick="toggleFolder('${folder.id}')">
         <span class="folder-chevron${folder.collapsed ? '' : ' open'}">▶</span>
-        <span class="folder-name">${esc(folder.name)}</span>
+        <span class="folder-name" title="Double-click to rename" ondblclick="event.stopPropagation();openRenameFolderModal('${folder.id}')">${esc(folder.name)}</span>
         ${folderDue > 0 ? `<span class="folder-due">${folderDue}</span>` : ''}
       </div>
       <div class="folder-contents${folder.collapsed ? ' collapsed' : ''}">
@@ -2082,6 +2082,26 @@ function openRenameFolderModal(id) {
   input.onkeydown = e => { if (e.key === 'Enter') saveFolder(); };
 }
 function closeFolderModal() { document.getElementById('folder-overlay').classList.remove('open'); }
+function saveFolder() {
+  const name = document.getElementById('folder-name-input').value.trim();
+  if (!name) return;
+  if (editingFolderId) {
+    const f = state.folders.find(x => x.id === editingFolderId);
+    if (f) f.name = name;
+    editingFolderId = null;
+    save(); closeFolderModal(); renderSidebar();
+    // refresh the folder name shown above the deck title, but never clobber an in-progress review
+    if (activeDeckId && !document.getElementById('rev-del-btn')) renderDeckMain();
+    return;
+  }
+  state.folders.push({ id: 'folder_' + Date.now(), name, collapsed: false });
+  save(); closeFolderModal(); renderSidebar();
+}
+function deleteFolder(id) {
+  state.decks.forEach(d => { if (d.folderId === id) d.folderId = null; });
+  state.folders = state.folders.filter(f => f.id !== id);
+  save(); renderSidebar();
+}
 
 // ─── DECK CRUD ────────────────────────────────────────────────────────────────
 function populateFolderSelect(selectedId) {
