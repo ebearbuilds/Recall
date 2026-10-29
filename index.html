@@ -766,12 +766,12 @@
   /* ═══ THEME LAYER 3 — chat-style nav, sidebar, inputs and review cards ═══ */
   :root {
     --oa-g: #10a37f; --oa-gd: #0b7d60;
-    --green: #0b7d60; --green-dim: #e0f5ef; --red: #d1342f; --red-dim: #fde8e7;
+    --green: #16864a; --green-dim: #dcfce7; --red: #d93f3f; --red-dim: #fee2e2;
     --coral: #a86a00; --coral-dim: #fff1d1; --blue: #2d62d6; --blue-dim: #e3ebfc; --purple: #7048d6; --purple-dim: #ece6fb;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.05); --shadow-md: 0 4px 20px rgba(0,0,0,.08); --shadow-lg: 0 20px 60px rgba(0,0,0,.25);
   }
   body.dark {
-    --green: #3fd0a8; --green-dim: rgba(16,163,127,.2); --red: #ff8a85; --red-dim: rgba(209,52,47,.22);
+    --green: #86e3ab; --green-dim: rgba(74,222,128,.16); --red: #ff9a94; --red-dim: rgba(248,113,113,.18);
     --coral: #ffcb6b; --coral-dim: rgba(255,203,107,.16); --blue: #8eb2ff; --blue-dim: rgba(45,98,214,.25);
     --purple: #b9a2ff; --purple-dim: rgba(112,72,214,.26);
     --shadow-sm: none; --shadow-md: 0 4px 20px rgba(0,0,0,.4); --shadow-lg: 0 20px 60px rgba(0,0,0,.7);
@@ -857,7 +857,7 @@
   .review-strip-track { height: 4px; border-radius: 999px; background: var(--fill-hover); }
   .review-strip-fill, .fsp-fill-focus { border-radius: 999px; }
   .cloze-blank-prev { background: var(--fill-hover); color: transparent; border-radius: 6px; }
-  .cloze-display span[style*="color:var(--accent)"] { color: var(--oa-g) !important; }
+  .cloze-display span[style*="color:var(--accent)"] { color: var(--green) !important; }
   body:not(.zz) .rating-btn { border: 1px solid var(--border); box-shadow: none; padding: 13px 6px; }
   body:not(.zz) .rating-btn:hover { background: var(--fill); border-color: var(--border-strong); }
   .rl { font-weight: 600; }
@@ -1019,6 +1019,14 @@ body:not(.dark) .review-wrap{position:relative}
   body.accent-on .ab-avatar { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: var(--on-accent); }
   body.accent-on:not(.dark) #main-area { background: radial-gradient(900px 520px at 88% -8%, var(--accent-tint), transparent 62%), radial-gradient(760px 520px at -4% 108%, var(--accent-tint2), transparent 62%), #fff; }
   body.accent-on.dark #main-area { background: radial-gradient(900px 520px at 88% -8%, var(--accent-tint), transparent 62%), radial-gradient(760px 520px at -4% 108%, var(--accent-tint2), transparent 62%), #000; }
+
+  /* ═══ CLOZE RESULT COLOURS — soft pill instead of thick underline; right = green, wrong = red ═══ */
+  .cloze-display span[style*="color:var(--accent)"], .cloze-display span[style*="color:var(--red)"] {
+    border-bottom: 0 !important; border-radius: 8px; padding: 1px 9px !important; font-weight: 500;
+    background: color-mix(in srgb, currentColor 15%, transparent);
+  }
+  .cloze-display span[style*="color:var(--red)"] { color: var(--red) !important; }
+  .cloze-display span[style*="min-width:80px"] { border-bottom: 2px solid var(--text-muted) !important; opacity: .7; }
 </style>
 </head>
 <body>
