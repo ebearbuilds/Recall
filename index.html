@@ -1735,7 +1735,7 @@ function renderSidebar() {
     html += `<div>
       <div class="folder-row" onclick="toggleFolder('${folder.id}')">
         <span class="folder-chevron${folder.collapsed ? '' : ' open'}">▶</span>
-        <span class="folder-name" title="Double-click to rename" ondblclick="event.stopPropagation();openRenameFolderModal('${folder.id}')">${esc(folder.name)}</span>
+        <span class="folder-name">${esc(folder.name)}</span>
         ${folderDue > 0 ? `<span class="folder-due">${folderDue}</span>` : ''}
       </div>
       <div class="folder-contents${folder.collapsed ? ' collapsed' : ''}">
