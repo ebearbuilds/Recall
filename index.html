@@ -335,6 +335,8 @@
   .text-input { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; font-weight: 500; font-size: 14px; padding: 8px 11px; border-radius: 7px; outline: none; transition: border-color 0.1s; margin-bottom: 14px; }
   .text-input:focus { border-color: var(--accent); }
   .editor-type-row { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .deck-pick-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 14px; font-size: 13px; color: var(--text-muted); }
+  .deck-pick-row select { flex: 1; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--bg-inset, transparent); color: var(--text); }
   .type-btn { font-size: 12px; font-family: 'Inter', -apple-system, sans-serif; font-weight: 500; padding: 6px 13px; border: 1px solid var(--border-strong); background: none; color: var(--text-muted); cursor: pointer; border-radius: 7px; transition: all 0.15s; }
   .type-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
   .rich-toolbar { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -1087,6 +1089,7 @@ body:not(.dark) .review-wrap{position:relative}
 <div class="overlay" id="card-overlay" onclick="if(event.target===this)closeCardEditor()">
   <div class="modal">
     <div class="modal-title" id="card-modal-title">New card</div>
+    <div class="deck-pick-row" id="deck-pick-row"><label for="card-deck-pick">Add to deck</label><select id="card-deck-pick"></select></div>
     <div class="editor-type-row">
       <button class="type-btn active" id="etype-basic" onclick="setCardType('basic')">Basic</button>
       <button class="type-btn" id="etype-cloze" onclick="setCardType('cloze')">Cloze deletion</button>
@@ -2210,8 +2213,17 @@ function deleteDeck(id) {
   save(); renderSidebar();
   document.getElementById('main-area').innerHTML = '<div class="no-deck"><div class="no-deck-title">Deck deleted</div></div>';
 }
+function populateDeckPick(selId) {
+  const sel = document.getElementById('card-deck-pick'); if (!sel) return;
+  const label = d => { const f = d.folderId ? state.folders.find(x => x.id === d.folderId) : null; return (f ? f.name + ' / ' : '') + d.name; };
+  sel.innerHTML = state.decks.map(d => `<option value="${d.id}">${esc(label(d))}</option>`).join('');
+  const want = selId || activeDeckId || window._lastCardDeck;
+  if (want && state.decks.some(d => d.id === want)) sel.value = want;
+}
 function openCardEditor(cardId) {
   editingCardId = cardId || null;
+  const dpr = document.getElementById('deck-pick-row'); if (dpr) dpr.style.display = cardId ? 'none' : 'flex';
+  if (!cardId) populateDeckPick();
   clozeN = 1;
   if (cardId) {
     const c = state.cards.find(x => x.id === cardId);
@@ -2400,7 +2412,11 @@ function removeEditorTag(tag) {
 }
 
 function saveCard() {
-  if (!activeDeckId) { closeCardEditor(); return; }
+  const pickEl = document.getElementById('card-deck-pick');
+  let targetDeckId = editingCardId ? activeDeckId : (pickEl && pickEl.value) || activeDeckId;
+  if (!editingCardId && !targetDeckId) { if (pickEl) pickEl.style.borderColor = 'var(--red)'; return; }
+  if (!targetDeckId) { closeCardEditor(); return; }
+  if (!editingCardId) window._lastCardDeck = targetDeckId;
   if (cardType === 'basic') {
     const front = document.getElementById('ef').value.trim();
     const back = document.getElementById('eb').value.trim();
@@ -2411,7 +2427,7 @@ function saveCard() {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) { c.front = front; c.back = back; c.type = 'basic'; c.tags = [...currentEditorTags]; }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'basic', front, back, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'basic', front, back, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   } else if (cardType === 'code') {
     const codePrompt = document.getElementById('ecode-prompt').value.trim();
@@ -2424,7 +2440,7 @@ function saveCard() {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) { c.codePrompt = codePrompt; c.codeAnswer = codeAnswer; c.codeLang = codeLang; c.type = 'code'; c.tags = [...currentEditorTags]; }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'code', codePrompt, codeAnswer, codeLang, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'code', codePrompt, codeAnswer, codeLang, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   } else if (cardType === 'cloze') {
     const ct = document.getElementById('ec').value.trim();
@@ -2440,7 +2456,7 @@ function saveCard() {
         if (questions.length && splitQ) c.questionsSplit = true; else delete c.questionsSplit;
       }
     } else {
-      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
+      const card = { id: 'c_' + Date.now(), deckId: targetDeckId, type: 'cloze', clozeText: ct, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
       if (questions.length) card.questions = questions;
       if (questions.length && splitQ) card.questionsSplit = true;
       state.cards.push(card);
@@ -2476,7 +2492,7 @@ function saveCard() {
         if (cliSteps) c.cliSteps = cliSteps; else delete c.cliSteps;
       }
     } else {
-      const card = { id: 'c_' + Date.now(), deckId: activeDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, cliNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
+      const card = { id: 'c_' + Date.now(), deckId: targetDeckId, type: 'cli', cliPrompt, cliAnswers, cliHint, cliNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] };
       if (cliSteps) card.cliSteps = cliSteps;
       state.cards.push(card);
     }
@@ -2494,7 +2510,7 @@ function saveCard() {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) { Object.assign(c, { type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, tags: [...currentEditorTags] }); }
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'vuln', vulnPrompt, vulnLang, vulnCode, vulnLines, vulnWhy, vulnFix, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   } else if (cardType === 'ab') {
     const trimCode = v => v.replace(/\s+$/, '').replace(/^\n+/, '');
@@ -2511,7 +2527,7 @@ function saveCard() {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) Object.assign(c, { type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, tags: [...currentEditorTags] });
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   } else if (cardType === 'order') {
     let orderLines = document.getElementById('eorder-code').value.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim());
@@ -2528,11 +2544,31 @@ function saveCard() {
       const c = state.cards.find(x => x.id === editingCardId);
       if (c) Object.assign(c, { type: 'order', orderPrompt, orderLang, orderLines, orderExtra, orderNote, tags: [...currentEditorTags] });
     } else {
-      state.cards.push({ id: 'c_' + Date.now(), deckId: activeDeckId, type: 'order', orderPrompt, orderLang, orderLines, orderExtra, orderNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'order', orderPrompt, orderLang, orderLines, orderExtra, orderNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   }
   save();
   const wasInReview = resumeReviewAfterEdit;
+  const wasNewCard = !editingCardId;
+  // New card (not an edit, not mid-review): stay in the editor, same type + tags, fields cleared
+  if (wasNewCard && !wasInReview) {
+    const keepTags = [...currentEditorTags], keepType = cardType;
+    const keepLangs = ['ecode-lang','eab-lang','eorder-lang','evuln-lang'].map(id => { const el = document.getElementById(id); return [id, el ? el.value : null]; });
+    openCardEditor();
+    setCardType(keepType);
+    keepLangs.forEach(([id, v]) => { const el = document.getElementById(id); if (el && v != null) el.value = v; });
+    currentEditorTags = keepTags;
+    renderEditorTags();
+    const n = state.cards.filter(c => c.deckId === targetDeckId).length;
+    const dn = (state.decks.find(d => d.id === targetDeckId) || {}).name || 'deck';
+    const t = document.getElementById('card-modal-title');
+    if (t) { t.textContent = 'Saved to ' + dn + ' ✓ (' + n + ')'; clearTimeout(window._savedT); window._savedT = setTimeout(() => { const t2 = document.getElementById('card-modal-title'); if (t2 && !editingCardId) t2.textContent = 'New card'; }, 2200); }
+    const mod = document.querySelector('#card-overlay .modal'); if (mod) mod.scrollTop = 0;
+    const dpk = document.getElementById('card-deck-pick'); if (dpk) dpk.value = targetDeckId;
+    if (activeDeckId) renderDeckMain();
+    renderSidebar();
+    return;
+  }
   resumeReviewAfterEdit = false;
   closeCardEditor();
   if (wasInReview) {
