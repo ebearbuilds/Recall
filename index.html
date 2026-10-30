@@ -336,6 +336,18 @@
   .text-input:focus { border-color: var(--accent); }
   .editor-type-row { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
   .deck-pick-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 14px; font-size: 13px; color: var(--text-muted); }
+  .dp { position: relative; flex: 1; }
+  .dp-btn { width: 100%; text-align: left; font-family: inherit; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: transparent; color: var(--text); cursor: pointer; position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dp-btn::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+  .dp-panel { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 50; background: var(--bg-card, var(--bg)); border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: 0 18px 50px rgba(0,0,0,.45); padding: 8px; }
+  .dp.open .dp-panel { display: block; }
+  .dp-panel input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text); outline: none; margin-bottom: 6px; }
+  #dp-list { max-height: 230px; overflow-y: auto; }
+  .dp-grp { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint, var(--text-muted)); padding: 8px 10px 4px; }
+  .dp-item { padding: 7px 10px; border-radius: 10px; font-size: 13px; color: var(--text); cursor: pointer; }
+  .dp-item:hover, .dp-item.hl { background: var(--bg-hover, rgba(128,128,128,.15)); }
+  .dp-item.cur { font-weight: 600; }
+  .dp-empty { padding: 10px; font-size: 13px; color: var(--text-muted); }
   .deck-pick-row select { flex: 1; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--bg-inset, transparent); color: var(--text); }
   .type-btn { font-size: 12px; font-family: 'Inter', -apple-system, sans-serif; font-weight: 500; padding: 6px 13px; border: 1px solid var(--border-strong); background: none; color: var(--text-muted); cursor: pointer; border-radius: 7px; transition: all 0.15s; }
   .type-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
@@ -1089,7 +1101,9 @@ body:not(.dark) .review-wrap{position:relative}
 <div class="overlay" id="card-overlay" onclick="if(event.target===this)closeCardEditor()">
   <div class="modal">
     <div class="modal-title" id="card-modal-title">New card</div>
-    <div class="deck-pick-row" id="deck-pick-row"><label for="card-deck-pick">Add to deck</label><select id="card-deck-pick"></select></div>
+    <div class="deck-pick-row" id="deck-pick-row"><label for="card-deck-pick">Add to deck</label><select id="card-deck-pick" style="display:none"></select>
+      <div class="dp" id="dp"><button type="button" class="dp-btn" id="dp-btn" onclick="toggleDeckPick(event)"></button>
+        <div class="dp-panel" id="dp-panel" onclick="event.stopPropagation()"><input id="dp-search" type="text" placeholder="Search decks…" autocomplete="off" oninput="renderDeckPickList()" onkeydown="deckPickKey(event)"><div id="dp-list"></div></div></div></div>
     <div class="editor-type-row">
       <button class="type-btn active" id="etype-basic" onclick="setCardType('basic')">Basic</button>
       <button class="type-btn" id="etype-cloze" onclick="setCardType('cloze')">Cloze deletion</button>
@@ -2219,7 +2233,57 @@ function populateDeckPick(selId) {
   sel.innerHTML = state.decks.map(d => `<option value="${d.id}">${esc(label(d))}</option>`).join('');
   const want = selId || activeDeckId || window._lastCardDeck;
   if (want && state.decks.some(d => d.id === want)) sel.value = want;
+  syncDeckPickLabel();
+  const dpe = document.getElementById('dp'); if (dpe) dpe.classList.remove('open');
 }
+function syncDeckPickLabel() {
+  const sel = document.getElementById('card-deck-pick'), btn = document.getElementById('dp-btn'); if (!sel || !btn) return;
+  const d = state.decks.find(x => x.id === sel.value);
+  const f = d && d.folderId ? state.folders.find(x => x.id === d.folderId) : null;
+  btn.textContent = d ? (f ? f.name + ' / ' : '') + d.name : 'Choose a deck…';
+}
+function toggleDeckPick(e) {
+  if (e) e.stopPropagation();
+  const dp = document.getElementById('dp'); const open = !dp.classList.contains('open');
+  dp.classList.toggle('open', open);
+  if (open) { const i = document.getElementById('dp-search'); i.value = ''; renderDeckPickList(); setTimeout(() => i.focus(), 20); }
+}
+function renderDeckPickList() {
+  const q = (document.getElementById('dp-search').value || '').trim().toLowerCase();
+  const cur = document.getElementById('card-deck-pick').value;
+  const fname = d => { const f = d.folderId ? state.folders.find(x => x.id === d.folderId) : null; return f ? f.name : ''; };
+  const item = d => `<div class="dp-item${d.id === cur ? ' cur' : ''}" data-id="${d.id}" onclick="pickDeck('${d.id}')">${esc(d.name)}</div>`;
+  let html = '';
+  if (q) {
+    const m = state.decks.filter(d => (fname(d) + ' ' + d.name).toLowerCase().includes(q));
+    html = m.map(d => `<div class="dp-item${d.id === cur ? ' cur' : ''}" data-id="${d.id}" onclick="pickDeck('${d.id}')">${esc(d.name)} <span style="color:var(--text-muted);font-size:11px">${esc(fname(d))}</span></div>`).join('');
+  } else {
+    const rec = (window._recentDecks || []).map(id => state.decks.find(d => d.id === id)).filter(Boolean).slice(0, 3);
+    if (rec.length) html += '<div class="dp-grp">Recent</div>' + rec.map(item).join('');
+    state.folders.forEach(f => { const ds = state.decks.filter(d => d.folderId === f.id); if (ds.length) html += `<div class="dp-grp">${esc(f.name)}</div>` + ds.map(item).join(''); });
+    const loose = state.decks.filter(d => !d.folderId || !state.folders.some(f => f.id === d.folderId));
+    if (loose.length) html += '<div class="dp-grp">No folder</div>' + loose.map(item).join('');
+  }
+  const list = document.getElementById('dp-list');
+  list.innerHTML = html || '<div class="dp-empty">No decks match</div>';
+  const first = list.querySelector('.dp-item'); if (q && first) first.classList.add('hl');
+}
+function pickDeck(id) {
+  const sel = document.getElementById('card-deck-pick'); sel.value = id; syncDeckPickLabel();
+  document.getElementById('dp').classList.remove('open');
+}
+function deckPickKey(e) {
+  e.stopPropagation();
+  const items = [...document.querySelectorAll('#dp-list .dp-item')]; if (!items.length && e.key !== 'Escape') return;
+  let i = items.findIndex(x => x.classList.contains('hl'));
+  if (e.key === 'ArrowDown') { e.preventDefault(); i = Math.min(items.length - 1, i + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); i = Math.max(0, i - 1); }
+  else if (e.key === 'Enter') { e.preventDefault(); const t = items[Math.max(0, i)]; if (t) pickDeck(t.dataset.id); return; }
+  else if (e.key === 'Escape') { e.preventDefault(); document.getElementById('dp').classList.remove('open'); return; }
+  else return;
+  items.forEach(x => x.classList.remove('hl')); items[i].classList.add('hl'); items[i].scrollIntoView({ block: 'nearest' });
+}
+document.addEventListener('click', e => { const dp = document.getElementById('dp'); if (dp && !dp.contains(e.target)) dp.classList.remove('open'); });
 function openCardEditor(cardId) {
   editingCardId = cardId || null;
   const dpr = document.getElementById('deck-pick-row'); if (dpr) dpr.style.display = cardId ? 'none' : 'flex';
@@ -2416,7 +2480,7 @@ function saveCard() {
   let targetDeckId = editingCardId ? activeDeckId : (pickEl && pickEl.value) || activeDeckId;
   if (!editingCardId && !targetDeckId) { if (pickEl) pickEl.style.borderColor = 'var(--red)'; return; }
   if (!targetDeckId) { closeCardEditor(); return; }
-  if (!editingCardId) window._lastCardDeck = targetDeckId;
+  if (!editingCardId) { window._lastCardDeck = targetDeckId; window._recentDecks = [targetDeckId, ...(window._recentDecks || []).filter(x => x !== targetDeckId)].slice(0, 3); }
   if (cardType === 'basic') {
     const front = document.getElementById('ef').value.trim();
     const back = document.getElementById('eb').value.trim();
@@ -2564,7 +2628,7 @@ function saveCard() {
     const t = document.getElementById('card-modal-title');
     if (t) { t.textContent = 'Saved to ' + dn + ' ✓ (' + n + ')'; clearTimeout(window._savedT); window._savedT = setTimeout(() => { const t2 = document.getElementById('card-modal-title'); if (t2 && !editingCardId) t2.textContent = 'New card'; }, 2200); }
     const mod = document.querySelector('#card-overlay .modal'); if (mod) mod.scrollTop = 0;
-    const dpk = document.getElementById('card-deck-pick'); if (dpk) dpk.value = targetDeckId;
+    const dpk = document.getElementById('card-deck-pick'); if (dpk) { dpk.value = targetDeckId; syncDeckPickLabel(); }
     if (activeDeckId) renderDeckMain();
     renderSidebar();
     return;
