@@ -174,7 +174,7 @@
   .type-code { background: var(--green-dim); color: var(--green); }
   .type-cli { background: var(--coral-dim); color: var(--coral); }
   .type-vuln { background: var(--red-dim); color: var(--red); }
-  .type-ab, .type-order { background: var(--bg-hover); color: var(--text-muted); }
+  .type-ab, .type-order, .type-match { background: var(--bg-hover); color: var(--text-muted); }
 
 
   /* code recall review */
@@ -1073,6 +1073,41 @@ body:not(.dark) .review-wrap{position:relative}
   .font-chip { font-size: 12px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; }
   .font-chip[data-f=serif] { font-family: 'Newsreader', serif; } .font-chip[data-f=rounded] { font-family: 'Nunito', sans-serif; font-weight: 700; } .font-chip[data-f=mono] { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
   .font-chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* ═══ MATCH THE PAIRS + CARD TEMPLATES ═══ */
+  .mt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; margin: 6px 0 14px; }
+  .mt-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .mt-col-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 2px; }
+  .mt-tile { text-align: left; font-family: inherit; font-size: 15px; line-height: 1.35; color: var(--text); background: var(--bg-card); border: 1.5px solid var(--border-strong); border-radius: 14px; padding: 11px 14px; cursor: pointer; position: relative; transition: border-color .12s, background .12s, transform .08s; word-break: break-word; }
+  .mt-tile:hover:not(:disabled) { border-color: var(--text); }
+  .mt-tile.sel { border-color: var(--text); box-shadow: 0 0 0 2px var(--text); }
+  .mt-tile:disabled { cursor: default; }
+  .mt-tile .mt-dot { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; font-size: 10px; font-weight: 700; margin-right: 8px; background: var(--mtc, var(--text)); color: #000; vertical-align: 1px; }
+  .mt-tile.linked { border-color: var(--mtc); background: color-mix(in srgb, var(--mtc) 14%, transparent); }
+  .mt-tile.right { border-color: var(--green); background: var(--green-dim); }
+  .mt-tile.wrong { border-color: var(--red); background: var(--red-dim); }
+  .mt-ans { margin: 6px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  .mt-ans-row { display: flex; gap: 10px; align-items: baseline; font-size: 14px; padding: 7px 12px; border-radius: 12px; background: var(--bg-inset); }
+  .mt-ans-row b { font-weight: 600; } .mt-ans-row .arrow { color: var(--text-faint); }
+  .mt-c0 { --mtc: #7fb0ff; } .mt-c1 { --mtc: #ff9fcd; } .mt-c2 { --mtc: #86e3ab; } .mt-c3 { --mtc: #ffd479; } .mt-c4 { --mtc: #cdb4ff; } .mt-c5 { --mtc: #6ee7d6; } .mt-c6 { --mtc: #ffb27a; } .mt-c7 { --mtc: #ff9a94; }
+  @media (max-width: 640px) { .mt-cols { gap: 10px 12px; } .mt-tile { font-size: 13.5px; padding: 9px 10px; } }
+  .tpl-row { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+  .tpl-row label { min-width: 0; }
+  .tpl-row select { flex: 1; min-width: 150px; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: transparent; color: var(--text); cursor: pointer; }
+  .tpl-row .tpl-btn { font-family: inherit; font-size: 12px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; }
+  .tpl-row .tpl-btn:hover { color: var(--text); border-color: var(--text); }
+  .tpl-row input { flex: 1; min-width: 140px; font-family: inherit; font-size: 13px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-strong); background: transparent; color: var(--text); outline: none; }
+
+  /* ═══ CARD SLIDE TRANSITIONS (review) ═══ */
+  @keyframes rvIn  { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+  @keyframes rvOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-26px); } }
+  @keyframes rvUp  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .review-wrap { animation: rvIn .28s cubic-bezier(.2,.8,.2,1) both; }
+  .review-wrap.rv-out { animation: rvOut .17s ease-in both; pointer-events: none; }
+  .review-wrap.rv-again { animation: rvUp .26s cubic-bezier(.2,.8,.2,1) both; }
+  .review-complete { animation: rvUp .35s cubic-bezier(.2,.8,.2,1) both; }
+  #main-area { overflow-x: hidden; }
+  @media (prefers-reduced-motion: reduce) { .review-wrap, .review-wrap.rv-out, .review-wrap.rv-again, .review-complete { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -1135,6 +1170,13 @@ body:not(.dark) .review-wrap{position:relative}
 <div class="overlay" id="card-overlay" onclick="if(event.target===this)closeCardEditor()">
   <div class="modal">
     <div class="modal-title" id="card-modal-title">New card</div>
+    <div class="tpl-row" id="tpl-row">
+      <label for="tpl-select">Template</label>
+      <select id="tpl-select" onchange="applyTemplate(this.value)"></select>
+      <button type="button" class="tpl-btn" id="tpl-del" style="display:none" onclick="deleteTemplate()">Delete</button>
+      <button type="button" class="tpl-btn" id="tpl-save-btn" onclick="saveTemplateStart()">Save as template</button>
+      <span id="tpl-name-wrap" style="display:none;flex:1;gap:8px;align-items:center;"><input id="tpl-name" type="text" placeholder="Template name…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();saveTemplateConfirm();}if(event.key==='Escape'){event.stopPropagation();saveTemplateCancel();}" /><button type="button" class="tpl-btn" onclick="saveTemplateConfirm()">Save</button><button type="button" class="tpl-btn" onclick="saveTemplateCancel()">Cancel</button></span>
+    </div>
     <div class="deck-pick-row" id="deck-pick-row"><label for="card-deck-pick">Add to deck</label><select id="card-deck-pick" style="display:none"></select>
       <div class="dp" id="dp"><button type="button" class="dp-btn" id="dp-btn" onclick="toggleDeckPick(event)"></button>
         <div class="dp-panel" id="dp-panel" onclick="event.stopPropagation()"><input id="dp-search" type="text" placeholder="Search decks…" autocomplete="off" oninput="renderDeckPickList()" onkeydown="deckPickKey(event)"><div id="dp-list"></div></div></div></div>
@@ -1146,6 +1188,7 @@ body:not(.dark) .review-wrap{position:relative}
       <button class="type-btn" id="etype-vuln" onclick="setCardType('vuln')">Spot the flaw</button>
       <button class="type-btn" id="etype-ab" onclick="setCardType('ab')">Secure or insecure?</button>
       <button class="type-btn" id="etype-order" onclick="setCardType('order')">Put in order</button>
+      <button class="type-btn" id="etype-match" onclick="setCardType('match')">Match pairs</button>
     </div>
 
     <!-- BASIC -->
@@ -1268,6 +1311,16 @@ body:not(.dark) .review-wrap{position:relative}
       <textarea class="editor-ta" id="eorder-extra" spellcheck="false" placeholder="db.insert(name)" style="min-height:60px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
       <div class="field-label">Note <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you check — optional)</span></div>
       <textarea class="editor-ta" id="eorder-note" placeholder="Validate first, then escape for the place the data is going, then store." onkeydown="taKey(event,'eorder-note')" style="min-height:60px;"></textarea>
+    </div>
+
+    <!-- MATCH PAIRS -->
+    <div id="match-fields" style="display:none;">
+      <div class="field-label">Prompt <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <input class="text-input" id="ematch-prompt" type="text" placeholder="Match each port to its service" />
+      <div class="field-label">Pairs <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(one per line: left :: right — 2 to 8 pairs)</span></div>
+      <textarea class="editor-ta" id="ematch-pairs" spellcheck="false" placeholder="22 :: SSH&#10;53 :: DNS&#10;443 :: HTTPS&#10;3306 :: MySQL" style="min-height:130px;font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre;"></textarea>
+      <div class="field-label">Note <span style="color:var(--text-faint);font-size:11px;text-transform:none;letter-spacing:0;">(shown after you check — optional)</span></div>
+      <textarea class="editor-ta" id="ematch-note" placeholder="Anything worth remembering about these pairs." style="min-height:60px;"></textarea>
     </div>
 
     <!-- CODE RECALL -->
@@ -1417,6 +1470,8 @@ function importData(e) {
       const existingFolderIds = new Set(state.folders.map(f => f.id));
       (imported.folders || []).forEach(f => { if (!existingFolderIds.has(f.id)) state.folders.push(f); });
       (imported.decks || []).forEach(d => { if (!existingDeckIds.has(d.id)) state.decks.push(d); });
+      state.templates = state.templates || [];
+      (imported.templates || []).forEach(t => { if (!state.templates.some(x => x.id === t.id)) state.templates.push(t); });
       retireAyahCards(imported.cards || []);   // backs up any old ayah cards instead of importing them
       (imported.cards || []).filter(c => c.type !== 'ayah').forEach(c => { if (!existingCardIds.has(c.id)) state.cards.push(c); });
       save();
@@ -1750,7 +1805,7 @@ function olArt(seed) {
 }
 function olText(c) {
   const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)(::.*?)?\}\}/g, '[…]')
-    : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || '');
+    : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || c.matchPrompt || '');
   return String(t).replace(/<[^>]+>/g, ' ').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim() || '(empty card)';
 }
 
@@ -1929,6 +1984,7 @@ function cardSearchText(c) {
   if (c.type === 'code') return (c.codePrompt || '') + ' ' + (c.codeAnswer || '');
   if (c.type === 'cli') return (c.cliPrompt || '') + ' ' + (c.cliAnswers || []).join(' ');
   if (c.type === 'ab') return (c.abPrompt || '') + ' ' + (c.abSecure || '') + ' ' + (c.abInsecure || '') + ' ' + (c.abWhy || '');
+  if (c.type === 'match') return (c.matchPrompt || '') + ' ' + (c.matchPairs || []).map(p => p.l + ' ' + p.r).join(' ') + ' ' + (c.matchNote || '');
   if (c.type === 'order') return (c.orderPrompt || '') + ' ' + (c.orderLines || []).join(' ') + ' ' + (c.orderExtra || []).join(' ') + ' ' + (c.orderNote || '');
   if (c.type === 'vuln') return (c.vulnPrompt || '') + ' ' + (c.vulnCode || '') + ' ' + (c.vulnWhy || '') + ' ' + (c.vulnFix || '');
   return (c.front || '') + ' ' + (c.back || '');
@@ -2142,8 +2198,10 @@ function cardRow(c) {
     ? (c.abPrompt || 'Secure or insecure?').slice(0, 80) + ' · ' + ((c.abSecure || '').split('\n').find(l => l.trim()) || '').trim().slice(0, 40)
     : c.type === 'order'
     ? (c.orderPrompt || 'Put in order').slice(0, 80) + ` · ${(c.orderLines || []).length} lines`
+    : c.type === 'match'
+    ? (c.matchPrompt || 'Match pairs').slice(0, 80) + ` · ${(c.matchPairs || []).length} pairs`
     : (c.front || '').slice(0,120);
-  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'vuln' ? 'type-vuln' : c.type === 'ab' ? 'type-ab' : c.type === 'order' ? 'type-order' : 'type-basic';
+  const badgeClass = c.type === 'cloze' ? 'type-cloze' : c.type === 'code' ? 'type-code' : c.type === 'cli' ? 'type-cli' : c.type === 'vuln' ? 'type-vuln' : c.type === 'ab' ? 'type-ab' : c.type === 'order' ? 'type-order' : c.type === 'match' ? 'type-match' : 'type-basic';
   const tags = c.tags || [];
   const tagsHtml = tags.length > 0
     ? `<div class="card-tags-row">${tags.map(t => {
@@ -2161,7 +2219,7 @@ function cardRow(c) {
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%;">
       ${checkboxHtml}
       <span class="nt-th" style="${ntGrad(c.id)}"></span>
-      <span class="card-type-badge ${badgeClass}">${({ vuln: 'flaw', ab: 'A/B', order: 'order' })[c.type] || c.type}</span>
+      <span class="card-type-badge ${badgeClass}">${({ vuln: 'flaw', ab: 'A/B', order: 'order', match: 'match' })[c.type] || c.type}</span>
       <div class="card-row-front" style="flex:1;">${md(front)}</div>
       ${isDue ? '<span class="card-due-tag">due</span>' : ''}
       <div class="card-row-btns" onclick="event.stopPropagation()">
@@ -2354,6 +2412,8 @@ document.addEventListener('click', e => { const dp = document.getElementById('dp
 function openCardEditor(cardId) {
   editingCardId = cardId || null;
   const dpr = document.getElementById('deck-pick-row'); if (dpr) dpr.style.display = cardId ? 'none' : 'flex';
+  const tpr = document.getElementById('tpl-row'); if (tpr) tpr.style.display = cardId ? 'none' : 'flex';
+  if (!cardId) populateTemplates();
   if (!cardId) populateDeckPick();
   clozeN = 1;
   if (cardId) {
@@ -2392,6 +2452,10 @@ function openCardEditor(cardId) {
       document.getElementById('eab-secure').value = c.abSecure || '';
       document.getElementById('eab-insecure').value = c.abInsecure || '';
       document.getElementById('eab-why').value = c.abWhy || '';
+    } else if (c.type === 'match') {
+      document.getElementById('ematch-prompt').value = c.matchPrompt || '';
+      document.getElementById('ematch-pairs').value = (c.matchPairs || []).map(p => p.l + ' :: ' + p.r).join('\n');
+      document.getElementById('ematch-note').value = c.matchNote || '';
     } else if (c.type === 'order') {
       document.getElementById('eorder-prompt').value = c.orderPrompt || '';
       document.getElementById('eorder-lang').value = c.orderLang || 'python';
@@ -2426,13 +2490,13 @@ function openCardEditor(cardId) {
     document.getElementById('evuln-fix').value = '';
     vulnPicked = new Set();
     renderVulnPicker();
-    ['eab-prompt','eab-secure','eab-insecure','eab-why','eorder-prompt','eorder-code','eorder-extra','eorder-note'].forEach(id => document.getElementById(id).value = '');
+    ['eab-prompt','eab-secure','eab-insecure','eab-why','eorder-prompt','eorder-code','eorder-extra','eorder-note','ematch-prompt','ematch-pairs','ematch-note'].forEach(id => document.getElementById(id).value = '');
     currentEditorTags = [];
   }
   renderEditorTags();
   document.getElementById('card-overlay').classList.add('open');
   if (cardType === 'code') refreshCodeAnswerHighlight();
-  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'vuln' ? 'evuln-prompt' : cardType === 'ab' ? 'eab-prompt' : cardType === 'order' ? 'eorder-prompt' : 'ef';
+  const focusId = cardType === 'cloze' ? 'ec' : cardType === 'code' ? 'ecode-prompt' : cardType === 'cli' ? 'ecli-prompt' : cardType === 'vuln' ? 'evuln-prompt' : cardType === 'ab' ? 'eab-prompt' : cardType === 'order' ? 'eorder-prompt' : cardType === 'match' ? 'ematch-prompt' : 'ef';
   setTimeout(() => document.getElementById(focusId).focus(), 50);
 }
 
@@ -2459,7 +2523,7 @@ function updateCliEditorMode() {
 
 function setCardType(t) {
   cardType = t;
-  ['basic','cloze','code','cli','vuln','ab','order'].forEach(x => {
+  ['basic','cloze','code','cli','vuln','ab','order','match'].forEach(x => {
     const btn = document.getElementById('etype-' + x);
     const fields = document.getElementById(x + '-fields');
     if (btn) btn.classList.toggle('active', x === t);
@@ -2659,6 +2723,21 @@ function saveCard() {
       if (c) Object.assign(c, { type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, tags: [...currentEditorTags] });
     } else {
       state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'ab', abPrompt, abLang, abSecure, abInsecure, abWhy, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
+    }
+  } else if (cardType === 'match') {
+    const matchPairs = document.getElementById('ematch-pairs').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+      const k = l.indexOf('::'); if (k < 0) return null;
+      return { l: l.slice(0, k).trim(), r: l.slice(k + 2).trim() };
+    }).filter(x => x && x.l && x.r).slice(0, 8);
+    const matchPrompt = document.getElementById('ematch-prompt').value.trim() || 'Match each item to its pair';
+    const matchNote = document.getElementById('ematch-note').value.trim();
+    document.getElementById('ematch-pairs').style.borderColor = matchPairs.length >= 2 ? '' : 'var(--red)';
+    if (matchPairs.length < 2) return;
+    if (editingCardId) {
+      const c = state.cards.find(x => x.id === editingCardId);
+      if (c) Object.assign(c, { type: 'match', matchPrompt, matchPairs, matchNote, tags: [...currentEditorTags] });
+    } else {
+      state.cards.push({ id: 'c_' + Date.now(), deckId: targetDeckId, type: 'match', matchPrompt, matchPairs, matchNote, interval: 1, due: Date.now(), ease: 2.5, reps: 0, tags: [...currentEditorTags] });
     }
   } else if (cardType === 'order') {
     let orderLines = document.getElementById('eorder-code').value.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim());
@@ -3019,6 +3098,7 @@ function renderRevCard() {
   else if (card.type === 'vuln') renderVulnRev(main, card, pct);
   else if (card.type === 'ab') renderAbRev(main, card, pct);
   else if (card.type === 'order') renderOrderRev(main, card, pct);
+  else if (card.type === 'match') renderMatchRev(main, card, pct);
   else renderFlipRev(main, card, pct);
 }
 
@@ -3390,7 +3470,9 @@ function calcInt(card, rating) {
   return 1;
 }
 
+let revAnimating = false;
 function rateCard(rating) {
+  if (revAnimating) return;
   logReview();
   const card = revQueue[revIdx];
   revResults[rating]++;
@@ -3417,7 +3499,17 @@ function rateCard(rating) {
     revIdx++;
   }
   document.onkeydown = null;
-  renderRevCard();
+  const wrap = document.querySelector('#main-area .review-wrap');
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!wrap || still) { renderRevCard(); return; }
+  revAnimating = true;
+  wrap.classList.add('rv-out');
+  setTimeout(() => {
+    revAnimating = false;
+    renderRevCard();
+    // "Again" shows the same card straight back: lift it up instead of sliding in from the side
+    if (rating === 'again') { const w = document.querySelector('#main-area .review-wrap'); if (w) w.classList.add('rv-again'); }
+  }, 170);
 }
 
 function renderRevComplete(main) {
@@ -4489,6 +4581,167 @@ function showRatingGrid() {
   grid.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
+
+// ─── MATCH THE PAIRS ─────────────────────────────────────────────────────────
+// card.matchPairs = [{l, r}], card.matchPrompt, card.matchNote. Tap a left item, then its partner on the right.
+let mtL = [], mtR = [], mtLinks = {}, mtSel = null, mtLocked = false;
+function renderMatchRev(main, card, pct) {
+  const pairs = card.matchPairs || [];
+  mtL = shuffleArray(pairs.map((p, i) => ({ id: i, t: p.l })));
+  mtR = shuffleArray(pairs.map((p, i) => ({ id: i, t: p.r })));
+  mtLinks = {}; mtSel = null; mtLocked = false;
+  main.innerHTML = `<div class="review-wrap fs-md">
+    ${progressHTML(pct)}
+    <div class="cq-box">
+      <div class="session-label">Match the pairs · tap one on the left, then its partner on the right</div>
+      <div class="cq-question">${md(card.matchPrompt || 'Match each item to its pair')}</div>
+      <div class="mt-cols"><div class="mt-col" id="mt-left"></div><div class="mt-col" id="mt-right"></div></div>
+      <div class="feedback-row"><span class="feedback" id="mt-fb"></span></div>
+      <div class="vuln-btnrow" id="mt-btns">
+        <button class="btn-check" id="mt-check" disabled onclick="checkMatch()">Check</button>
+        <button class="btn-secondary" onclick="resetMatch()">Reset</button>
+      </div>
+      <div id="mt-after"></div>
+    </div>
+    ${ratingHTML(card)}
+  </div>`;
+  renderMatchBoard();
+}
+function renderMatchBoard() {
+  const linkedRight = {}; Object.entries(mtLinks).forEach(([l, r]) => linkedRight[r] = +l);
+  const order = Object.keys(mtLinks).map(Number);    // colour by the order links were made
+  const col = lid => order.indexOf(lid) % 8;
+  const num = lid => order.indexOf(lid) + 1;
+  const tile = (side, it) => {
+    const lid = side === 'l' ? it.id : linkedRight[it.id];
+    const linked = lid !== undefined && (side === 'l' ? mtLinks[it.id] !== undefined : true);
+    let cls = 'mt-tile';
+    if (linked) cls += ` linked mt-c${col(lid)}`;
+    if (side === 'l' && mtSel === it.id) cls += ' sel';
+    const dot = linked ? `<span class="mt-dot">${num(lid)}</span>` : '';
+    return `<button class="${cls}" ${mtLocked ? 'disabled' : ''} onclick="mtClick('${side}',${it.id})">${dot}${esc(it.t)}</button>`;
+  };
+  document.getElementById('mt-left').innerHTML = '<div class="mt-col-label">Item</div>' + mtL.map(x => tile('l', x)).join('');
+  document.getElementById('mt-right').innerHTML = '<div class="mt-col-label">Match</div>' + mtR.map(x => tile('r', x)).join('');
+  const chk = document.getElementById('mt-check'); if (chk) chk.disabled = mtLocked || Object.keys(mtLinks).length === 0;
+}
+function mtClick(side, id) {
+  if (mtLocked) return;
+  if (side === 'l') {
+    if (mtLinks[id] !== undefined) { delete mtLinks[id]; mtSel = id; }      // tap a linked item to unlink it
+    else mtSel = mtSel === id ? null : id;
+  } else {
+    const owner = Object.keys(mtLinks).find(l => mtLinks[l] === id);
+    if (owner !== undefined && (mtSel === null)) { delete mtLinks[owner]; mtSel = +owner; }
+    else if (mtSel !== null) { if (owner !== undefined) delete mtLinks[owner]; mtLinks[mtSel] = id; mtSel = null; }
+  }
+  renderMatchBoard();
+}
+function resetMatch() { if (mtLocked) return; mtLinks = {}; mtSel = null; renderMatchBoard(); }
+function checkMatch() {
+  const card = revQueue[revIdx], pairs = card.matchPairs || [];
+  if (mtLocked || !Object.keys(mtLinks).length) return;
+  const states = {}; let right = 0;
+  mtL.forEach(l => {
+    const rid = mtLinks[l.id];
+    const ok = rid !== undefined && pairs[rid].r === pairs[l.id].r;
+    states[l.id] = ok ? 'right' : 'wrong'; if (ok) right++;
+  });
+  mtLocked = true;
+  const linkedRight = {}; Object.entries(mtLinks).forEach(([l, rid]) => linkedRight[rid] = +l);
+  const rs = {}; mtR.forEach(r => { const o = linkedRight[r.id]; rs[r.id] = o === undefined ? '' : states[o]; });
+  document.getElementById('mt-left').innerHTML = '<div class="mt-col-label">Item</div>' + mtL.map(x => `<button class="mt-tile ${states[x.id]}" disabled>${esc(x.t)}</button>`).join('');
+  document.getElementById('mt-right').innerHTML = '<div class="mt-col-label">Match</div>' + mtR.map(x => `<button class="mt-tile ${rs[x.id]}" disabled>${esc(x.t)}</button>`).join('');
+  document.getElementById('mt-btns').style.display = 'none';
+  const perfect = right === pairs.length;
+  const fb = document.getElementById('mt-fb');
+  fb.textContent = perfect ? '✓ all pairs matched' : `✗ ${right}/${pairs.length} pair${pairs.length !== 1 ? 's' : ''} correct`;
+  fb.className = 'feedback ' + (perfect ? 'ok' : 'bad');
+  let html = '';
+  if (!perfect) html += `<div class="cq-points-label" style="margin-top:14px;">Correct pairs</div><div class="mt-ans">${pairs.map(p => `<div class="mt-ans-row"><b>${esc(p.l)}</b><span class="arrow">→</span><span>${esc(p.r)}</span></div>`).join('')}</div>`;
+  if (card.matchNote) html += `<div class="cq-points-label" style="margin-top:14px;">Note</div><div class="vuln-why">${md(card.matchNote)}</div>`;
+  document.getElementById('mt-after').innerHTML = html;
+  showRatingGrid();
+}
+
+// ─── CARD TEMPLATES ──────────────────────────────────────────────────────────
+// A template = card type + the editor's field values + tags (+ deck). Built-ins below; yours live in state.templates.
+const BUILTIN_TEMPLATES = [
+  { id: 'b_cve', name: 'CVE card', type: 'basic', tags: ['cve'], fields: {
+      ef: 'CVE-____-_____: what is it?',
+      eb: '**What it is:** \n**Affected:** \n**Impact:** \n**Fix / mitigation:** ' } },
+  { id: 'b_port', name: 'Port / protocol', type: 'basic', tags: ['networking'], fields: {
+      ef: 'Port ____ — which service / protocol?',
+      eb: '**Service:** \n**Transport:** TCP / UDP\n**Common attacks:** \n**Hardening:** ' } },
+  { id: 'b_vocab', name: 'Vocabulary word', type: 'basic', tags: ['vocab'], fields: {
+      ef: '____',
+      eb: '**Meaning:** \n**Example sentence:** \n**Root / notes:** ' } },
+  { id: 'b_define', name: 'Definition', type: 'basic', tags: [], fields: {
+      ef: 'What is ____?',
+      eb: '**In one line:** \n**Why it matters:** \n**Example:** ' } },
+  { id: 'b_match', name: 'Match: port → service', type: 'match', tags: ['networking'], fields: {
+      'ematch-prompt': 'Match each port to its service',
+      'ematch-pairs': '22 :: SSH\n53 :: DNS\n80 :: HTTP\n443 :: HTTPS\n3306 :: MySQL' } },
+];
+function allTemplates() { return BUILTIN_TEMPLATES.concat(state.templates || []); }
+function populateTemplates() {
+  const sel = document.getElementById('tpl-select'); if (!sel) return;
+  const mine = state.templates || [];
+  sel.innerHTML = '<option value="">Start from a template…</option>'
+    + '<optgroup label="Built-in">' + BUILTIN_TEMPLATES.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('') + '</optgroup>'
+    + (mine.length ? '<optgroup label="Yours">' + mine.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('') + '</optgroup>' : '');
+  sel.value = '';
+  document.getElementById('tpl-del').style.display = 'none';
+  saveTemplateCancel();
+}
+function applyTemplate(id) {
+  const sel = document.getElementById('tpl-select');
+  const t = allTemplates().find(x => x.id === id);
+  document.getElementById('tpl-del').style.display = t && !t.id.startsWith('b_') ? '' : 'none';
+  if (!t) return;
+  setCardType(t.type);
+  Object.entries(t.fields || {}).forEach(([fid, v]) => {
+    const el = document.getElementById(fid); if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  });
+  if (t.type === 'cli' && typeof updateCliEditorMode === 'function') updateCliEditorMode();
+  if (t.type === 'code' && typeof refreshCodeAnswerHighlight === 'function') refreshCodeAnswerHighlight();
+  currentEditorTags = [...(t.tags || [])];
+  renderEditorTags();
+  if (t.deckId && state.decks.some(d => d.id === t.deckId)) { document.getElementById('card-deck-pick').value = t.deckId; syncDeckPickLabel(); }
+  const first = document.getElementById(Object.keys(t.fields || {})[0]); if (first) setTimeout(() => first.focus(), 30);
+}
+function saveTemplateStart() {
+  document.getElementById('tpl-name-wrap').style.display = 'flex';
+  document.getElementById('tpl-save-btn').style.display = 'none';
+  const i = document.getElementById('tpl-name'); i.value = ''; setTimeout(() => i.focus(), 20);
+}
+function saveTemplateCancel() {
+  const w = document.getElementById('tpl-name-wrap'); if (w) w.style.display = 'none';
+  const b = document.getElementById('tpl-save-btn'); if (b) b.style.display = '';
+}
+function saveTemplateConfirm() {
+  const nameEl = document.getElementById('tpl-name'), name = nameEl.value.trim();
+  if (!name) { nameEl.style.borderColor = 'var(--red)'; return; }
+  nameEl.style.borderColor = '';
+  const box = document.getElementById(cardType + '-fields');
+  const fields = {};
+  if (box) box.querySelectorAll('input, textarea, select').forEach(el => { if (el.id) fields[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+  const pick = document.getElementById('card-deck-pick');
+  state.templates = state.templates || [];
+  state.templates.push({ id: 'tpl_' + Date.now(), name, type: cardType, fields, tags: [...currentEditorTags], deckId: pick ? pick.value : undefined });
+  save();
+  populateTemplates();
+  const sel = document.getElementById('tpl-select'); sel.value = state.templates[state.templates.length - 1].id;
+  document.getElementById('tpl-del').style.display = '';
+}
+function deleteTemplate() {
+  const id = document.getElementById('tpl-select').value;
+  if (!id || id.startsWith('b_')) return;
+  state.templates = (state.templates || []).filter(t => t.id !== id);
+  save(); populateTemplates();
+}
+
 // ─── PUT IN ORDER ─────────────────────────────────────────────────────────────
 // card.orderLines (correct order, indentation kept), card.orderExtra (distractors), card.orderLang, card.orderNote
 // Only the order is checked, not indentation.
@@ -4805,7 +5058,7 @@ loadAppTheme();
 
   function cardTitle(c) {
     const t = c.type === 'cloze' ? (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1')
-      : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || '');
+      : (c.front || c.codePrompt || c.cliPrompt || c.vulnPrompt || c.abPrompt || c.orderPrompt || c.matchPrompt || '');
     return t.replace(/\s+/g, ' ').trim().slice(0, 90);
   }
   function build() {
