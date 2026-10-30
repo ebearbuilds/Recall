@@ -88,6 +88,12 @@
   .tag-pill { font-family: 'Inter', -apple-system, sans-serif; cursor: pointer; transition: all 0.1s; }
   .tag-pill.active { background: var(--accent-dim); color: var(--accent); }
   .tag-pill.removable::after { content: " ×"; opacity: 0.6; }
+  .tag-filter-row { flex-direction: column; align-items: flex-start !important; gap: 0 !important; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; width: 100%; }
+  .tag-row.sub { margin-left: 10px; padding-left: 14px; border-left: 2px solid var(--border); }
+  .tag-pill.trail { border-color: var(--text-muted); color: var(--text); }
+  .tag-pill.tag-more { border-style: dashed; }
+  .tag-has-kids { margin-left: 5px; opacity: .5; font-size: 13px; line-height: 1; }
   .tag-filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; align-items: center; }
   .tag-filter-row .tag-pill.all.active { background: var(--text); color: var(--bg); }
   .card-tags-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
@@ -1856,6 +1862,40 @@ function renderTagTree(tree, allCards, depth) {
   }).join('');
 }
 
+// ── Tag bar: one row per level; only the path you're on is expanded ──
+window._tagRowOpen = window._tagRowOpen || {};
+function tagParent(tag) { const p = tag.split('::'); p.pop(); return p.join('::') || null; }
+function toggleTagRow(k) { window._tagRowOpen[k] = !window._tagRowOpen[k]; renderDeckMain(); }
+function tagPillClick(full) { setTagFilter(full === activeTagFilter ? tagParent(full) : full); }
+function renderTagBar(tags, allCards) {
+  const tree = buildTagTree(tags);
+  const parts = activeTagFilter ? activeTagFilter.split('::') : [];
+  const LIMIT = 8;
+  let out = '';
+  for (let k = 0; k <= parts.length; k++) {
+    let node = { children: tree };
+    for (let i = 0; i < k && node; i++) node = node.children[parts[i]];
+    if (!node) break;
+    let entries = Object.entries(node.children).map(([key, n]) => ({ key, n, count: allCards.filter(c => tagMatches(c.tags, n.fullTag)).length }));
+    if (!entries.length) break;
+    entries.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+    const open = !!window._tagRowOpen[k];
+    let shown = open ? entries : entries.slice(0, LIMIT);
+    const act = entries.find(e => e.key === parts[k]);
+    if (act && !shown.includes(act)) shown = [...shown.slice(0, LIMIT - 1), act];
+    const hidden = entries.length - shown.length;
+    const parentFull = k === 0 ? null : parts.slice(0, k).join('::');
+    const head = k === 0
+      ? `<span class="tag-pill all${!activeTagFilter ? ' active' : ''}" onclick="setTagFilter(null)">All (${allCards.length})</span>`
+      : `<span class="tag-pill all${activeTagFilter === parentFull ? ' active' : ''}" onclick="setTagFilter('${esc(parentFull)}')">All ${esc(parts[k - 1])}</span>`;
+    out += `<div class="tag-row${k > 0 ? ' sub' : ''}">${head}`
+      + shown.map(e => `<span class="tag-pill${activeTagFilter === e.n.fullTag ? ' active' : (parts[k] === e.key ? ' trail' : '')}" onclick="tagPillClick('${esc(e.n.fullTag)}')" title="${esc(e.n.fullTag)}">${esc(e.key)} <span style="opacity:.6">${e.count}</span>${Object.keys(e.n.children).length ? '<span class="tag-has-kids">›</span>' : ''}</span>`).join('')
+      + (entries.length > LIMIT ? `<span class="tag-pill tag-more" onclick="toggleTagRow(${k})">${open ? 'Show less' : '+' + hidden + ' more'}</span>` : '')
+      + `</div>`;
+  }
+  return out;
+}
+
 function cardSearchText(c) {
   if (c.type === 'cloze') return (c.clozeText || '').replace(/\{\{c\d+::(.+?)\}\}/g, '$1');
   if (c.type === 'code') return (c.codePrompt || '') + ' ' + (c.codeAnswer || '');
@@ -1934,8 +1974,7 @@ function renderDeckMain() {
 
   const tagFilterRow = tags.length > 0 ? `
     <div class="tag-filter-row">
-      <span class="tag-pill all${!activeTagFilter ? ' active' : ''}" onclick="setTagFilter(null)">All (${allCards.length})</span>
-      ${renderTagTree(buildTagTree(tags), allCards, 0)}
+      ${renderTagBar(tags, allCards)}
     </div>` : '';
 
   const filterLabel = activeTagFilter
