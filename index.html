@@ -6,7 +6,7 @@
 <title>Meno</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='6' y1='6' x2='26' y2='26'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='0.6' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%23818cf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='.75' y='.75' width='30.5' height='30.5' rx='7.5' fill='%23000' stroke='%232e2e33' stroke-width='1.5'/%3E%3Cpath d='M16 5.5C22.500 5.500 25 12 20.500 15.500' transform='rotate(0 16 16)' fill='none' stroke='url(%23g)' stroke-width='3.400' stroke-linecap='round'/%3E%3Cpath d='M16 5.5C22.500 5.500 25 12 20.500 15.500' transform='rotate(120 16 16)' fill='none' stroke='url(%23g)' stroke-width='3.400' stroke-linecap='round'/%3E%3Cpath d='M16 5.5C22.500 5.500 25 12 20.500 15.500' transform='rotate(240 16 16)' fill='none' stroke='url(%23g)' stroke-width='3.400' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1047,6 +1047,32 @@ body:not(.dark) .review-wrap{position:relative}
   }
   .cloze-display span[style*="color:var(--red)"] { color: var(--red) !important; }
   .cloze-display span[style*="min-width:80px"] { border-bottom: 2px solid var(--text-muted) !important; opacity: .7; }
+
+  /* ═══ PALETTES (surface colours) + CARD FONT — body[data-palette], body[data-cardfont]. Delete to remove. ═══ */
+  body[data-palette=midnight]:not(.dark) { --bg: #f6f8fd; --bg-card: #ffffff; --bg-inset: #eef2fb; --bg-hover: #e8edf8; --fill: #e9eef9; --fill-hover: #dce4f5; --border: #dfe5f2; --border-strong: #c4cde3; --text: #0b1020; --text-muted: #5b6788; --text-faint: #94a0bd; }
+  body[data-palette=midnight].dark { --bg: #0b1020; --bg-card: #121a30; --bg-inset: #0b1020; --bg-hover: #18223d; --fill: #1a2340; --fill-hover: #26325a; --border: #232d4a; --border-strong: #3d4b78; --text: #eef2ff; --text-muted: #a5b0d0; --text-faint: #6b789e; }
+  body[data-palette=slate]:not(.dark) { --bg: #f4f5f7; --bg-card: #ffffff; --bg-inset: #eceef2; --bg-hover: #e6e9ee; --fill: #e8ebf0; --fill-hover: #dadfe7; --border: #e0e3e9; --border-strong: #c8ced8; --text: #14171c; --text-muted: #5f6773; --text-faint: #9aa1ad; }
+  body[data-palette=slate].dark { --bg: #14171c; --bg-card: #1c2027; --bg-inset: #14171c; --bg-hover: #232831; --fill: #242a33; --fill-hover: #323a46; --border: #2b313b; --border-strong: #48515f; --text: #f1f3f6; --text-muted: #a7aeb9; --text-faint: #6f7886; }
+  body[data-palette=warm]:not(.dark) { --bg: #faf6ef; --bg-card: #fffdf9; --bg-inset: #f3ede2; --bg-hover: #ede5d7; --fill: #efe8db; --fill-hover: #e4dac8; --border: #e6dccb; --border-strong: #d0c3ac; --text: #1c1610; --text-muted: #6e6253; --text-faint: #a09482; }
+  body[data-palette=warm].dark { --bg: #15110d; --bg-card: #1e1914; --bg-inset: #15110d; --bg-hover: #261f18; --fill: #2a231b; --fill-hover: #3a3025; --border: #32291f; --border-strong: #54463a; --text: #f6efe6; --text-muted: #b5a898; --text-faint: #7c7064; }
+  body[data-palette=forest]:not(.dark) { --bg: #f3f8f4; --bg-card: #ffffff; --bg-inset: #eaf2ec; --bg-hover: #e2ede5; --fill: #e5efe8; --fill-hover: #d6e5da; --border: #dce8df; --border-strong: #c0d2c5; --text: #0b130f; --text-muted: #56695c; --text-faint: #92a698; }
+  body[data-palette=forest].dark { --bg: #0b130f; --bg-card: #121c16; --bg-inset: #0b130f; --bg-hover: #19261e; --fill: #1c2a21; --fill-hover: #2a3d30; --border: #233127; --border-strong: #3e5546; --text: #eef6f0; --text-muted: #a3b5a8; --text-faint: #6a7f6f; }
+  body[data-palette]:not([data-palette=classic]) #main-area, body[data-palette]:not([data-palette=classic]) { background-color: var(--bg) !important; }
+  body[data-palette]:not([data-palette=classic]) #sidebar, body[data-palette]:not([data-palette=classic]) nav { background: var(--bg); }
+  body[data-cardfont] .flip-content, body[data-cardfont] .cloze-display, body[data-cardfont] .card-row-front, body[data-cardfont] .deck-title, body[data-cardfont] .cq-box, body[data-cardfont] .cloze-hint { font-family: var(--card-font, 'Inter', sans-serif); letter-spacing: var(--card-ls, -0.01em); }
+  body[data-cardfont=inter] { --card-font: 'Inter', -apple-system, sans-serif; --card-ls: -0.01em; }
+  body[data-cardfont=serif] { --card-font: 'Newsreader', Georgia, serif; --card-ls: -0.005em; }
+  body[data-cardfont=rounded] { --card-font: 'Nunito', 'Inter', sans-serif; --card-ls: 0; font-weight: 500; }
+  body[data-cardfont=rounded] .flip-content, body[data-cardfont=rounded] .cloze-display, body[data-cardfont=rounded] .deck-title, body[data-cardfont=rounded] .card-row-front { font-weight: 600; }
+  body[data-cardfont=mono] { --card-font: 'JetBrains Mono', ui-monospace, monospace; --card-ls: -0.02em; }
+  body[data-cardfont=mono] .flip-content, body[data-cardfont=mono] .cloze-display, body[data-cardfont=mono] .card-row-front, body[data-cardfont=mono] .cq-box { font-size: .92em; }
+  .pal-sw { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .12s; box-shadow: inset 0 0 0 1px rgba(128,128,128,.4); }
+  .pal-sw:hover { transform: scale(1.12); }
+  .pal-sw.on { border-color: var(--bg-card); box-shadow: 0 0 0 2px var(--text); }
+  .font-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .font-chip { font-size: 12px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+  .font-chip[data-f=serif] { font-family: 'Newsreader', serif; } .font-chip[data-f=rounded] { font-family: 'Nunito', sans-serif; font-weight: 700; } .font-chip[data-f=mono] { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .font-chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
 </style>
 </head>
 <body>
@@ -1076,6 +1102,8 @@ body:not(.dark) .review-wrap{position:relative}
       <option value="solarized">Solarized Dark</option>
     </select>
         <div class="acc-row"><div class="acc-label">Accent colour</div><div class="acc-swatches" id="acc-swatches"></div></div>
+        <div class="acc-row"><div class="acc-label">Palette</div><div class="acc-swatches" id="pal-swatches"></div></div>
+        <div class="acc-row"><div class="acc-label">Card font</div><div class="font-chips" id="font-chips"></div></div>
         <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAppTheme()" title="Toggle dark mode">🌙</button>
       </div>
     </div>
@@ -4719,12 +4747,40 @@ function setAccent(name) {
   applyAccent();
 }
 
+
+// ─── PALETTE + CARD FONT ───────────────────────────────────────────────────
+const PALETTE_KEY = 'meno_palette_v1', CARDFONT_KEY = 'meno_cardfont_v1';
+const PALETTES = {
+  classic:  { name: 'Black & white', light: '#ffffff', dark: '#000000' },
+  midnight: { name: 'Midnight', light: '#f6f8fd', dark: '#0b1020' },
+  slate:    { name: 'Slate',    light: '#f4f5f7', dark: '#14171c' },
+  warm:     { name: 'Warm',     light: '#faf6ef', dark: '#15110d' },
+  forest:   { name: 'Forest',   light: '#f3f8f4', dark: '#0b130f' },
+};
+const CARDFONTS = { inter: 'Inter', serif: 'Serif', rounded: 'Rounded', mono: 'Mono' };
+function lsGet(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+function applyPalette() {
+  const pal = PALETTES[lsGet(PALETTE_KEY, 'classic')] ? lsGet(PALETTE_KEY, 'classic') : 'classic';
+  const cf = CARDFONTS[lsGet(CARDFONT_KEY, 'inter')] ? lsGet(CARDFONT_KEY, 'inter') : 'inter';
+  document.body.dataset.palette = pal; document.body.dataset.cardfont = cf;
+  const dark = document.body.classList.contains('dark');
+  const box = document.getElementById('pal-swatches');
+  if (box) box.innerHTML = Object.entries(PALETTES).map(([k, p]) =>
+    `<span class="pal-sw${k === pal ? ' on' : ''}" title="${p.name}" style="background:linear-gradient(135deg,${p.light} 50%,${p.dark} 50%)" onclick="event.stopPropagation();setPalette('${k}')"></span>`).join('');
+  const fc = document.getElementById('font-chips');
+  if (fc) fc.innerHTML = Object.entries(CARDFONTS).map(([k, n]) =>
+    `<button class="font-chip${k === cf ? ' on' : ''}" data-f="${k}" title="${n}" onclick="event.stopPropagation();setCardFont('${k}')">${n}</button>`).join('');
+}
+function setPalette(k) { if (!PALETTES[k]) return; try { localStorage.setItem(PALETTE_KEY, k); } catch (e) {} applyPalette(); }
+function setCardFont(k) { if (!CARDFONTS[k]) return; try { localStorage.setItem(CARDFONT_KEY, k); } catch (e) {} applyPalette(); }
+
 function setAppTheme(mode) {
   document.body.classList.toggle('dark', mode === 'dark');
   const btn = document.getElementById('theme-toggle-btn');
   if (btn) btn.textContent = mode === 'dark' ? '☀️' : '🌙';
   localStorage.setItem(THEME_KEY, mode);
   applyAccent();
+  applyPalette();
 }
 function toggleAppTheme() {
   setAppTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
